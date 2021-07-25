@@ -5,15 +5,18 @@ import { environment } from '@env/environment';
 // layout
 import { LayoutBasicComponent } from '../layout/basic/basic.component';
 import { LayoutBlankComponent } from '../layout/blank/blank.component';
+import { DevicegraphComponent } from './device/devicegraph/devicegraph.component';
 
 import { DevicelistComponent } from './device/devicelist/devicelist.component';
+import { DevicesceneComponent } from './device/devicescene/devicescene.component';
+import { DesignerComponent } from './flow/designer/designer.component';
 import { TenantlistComponent } from './tenant/tenantlist/tenantlist.component';
+import { UserlistComponent } from './user/userlist/userlist.component';
 
 const routes: Routes = [
   {
     path: '',
     component: LayoutBasicComponent,
-
 
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -34,9 +37,13 @@ const routes: Routes = [
     component: LayoutBasicComponent,
     children: [
       { path: 'tenant/tenantlist', component: TenantlistComponent },
-
+      { path: 'user/userlist', component: UserlistComponent },
       { path: 'customer', loadChildren: () => import('./customer/customer.module').then((m) => m.CustomerModule) },
-      { path: 'device/devicelist', component: DevicelistComponent },]
+      { path: 'device/devicelist', component: DevicelistComponent },
+      { path: 'device/devicegraph', component: DevicegraphComponent },
+      { path: 'device/devicescene', component: DevicesceneComponent },
+      { path: 'flow/designer', component: DesignerComponent },
+    ],
   },
 
   // Blak Layout 空白布局
@@ -62,4 +69,4 @@ const routes: Routes = [
   ],
   exports: [RouterModule],
 })
-export class RouteRoutingModule { }
+export class RouteRoutingModule {}
