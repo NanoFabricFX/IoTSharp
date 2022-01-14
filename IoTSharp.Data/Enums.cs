@@ -32,6 +32,9 @@ namespace IoTSharp.Data
         RPCTimeout = 10012,
         CustomerDoesNotHaveDevice = 10013,
         CreateUserFailed = 10014,
+
+        CantFindObject = 10015,
+        InValidData = 10016,
     }
 
     public enum DataCatalog
@@ -81,7 +84,8 @@ namespace IoTSharp.Data
         SqlServer,
         MySql ,
         Oracle ,
-        Sqlite
+        Sqlite,
+        InMemory
     }
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
@@ -125,4 +129,43 @@ namespace IoTSharp.Data
         RuleNode,
         RuleSwitcher
     }
+
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum EventType
+    {
+        Normal=1,
+        TestPurpose=2
+    }
+
+
+
+    public enum NodeStatus
+    {
+        Abort = -1,
+        Created = 0,
+        Processing =1,
+        Suspend = 2,
+        Complete = 1,
+    }
+
+    public enum MsgType
+    {
+        MQTT,
+        CoAP,
+        HTTP
+    }
+    public enum MountType
+    {
+        RAW = 0,
+        Telemetry =1,
+        Attribute=2,
+        RPC=3,
+        Online = 4,
+        Offline=5
+    }
+
+    
+
+
 }

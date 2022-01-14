@@ -1,5 +1,6 @@
 ﻿using IoTSharp.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,5 +55,29 @@ namespace IoTSharp.Extensions
                 _context.PreparingData<AttributeLatest>(pairs, device.Id, DataSide.ServerSide);
             }
         }
+        public static async Task<DeviceRule[]> GerDeviceRulesList(this ApplicationDbContext _dbContext, Guid devid, MountType mountType)
+        {
+            DeviceRule[] lst = null;
+            var r = from dr in _dbContext.DeviceRules.Include(d => d.Device).Include(d => d.FlowRule) where dr.Device.Id == devid && dr.FlowRule.MountType == mountType select dr ;
+            if (r.Any())
+            {
+                lst = await r.ToArrayAsync();
+            }
+            return lst;
+        }
+        public static async Task<Guid> GerDeviceRpcRulesList(this ApplicationDbContext _dbContext, Guid devid, MountType mountType,string method)
+        {
+            var rules = await GerDeviceRulesList(_dbContext, devid, mountType);
+            var g = (rules.FirstOrDefault(r => r.FlowRule.Name == method)?.FlowRule.RuleId);
+            return g.GetValueOrDefault();
+        }
+        public static async Task<Guid[]> GerDeviceRulesIdList(this ApplicationDbContext _dbContext, Guid devid, MountType mountType)
+        {
+            var rules =await  GerDeviceRulesList(_dbContext, devid, mountType);
+            return rules?.Select(xc => xc.FlowRule.RuleId).ToArray();
+        }
+            
+
+
     }
 }

@@ -2,7 +2,6 @@
 using DotNetCore.CAP;
 using IoTSharp.Data;
 using IoTSharp.Handlers;
-using IoTSharp.Queue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,7 +23,7 @@ namespace IoTSharp.Services
     public class CoAPService : IHostedService
     {
         private readonly ILogger _logger;
- 
+
         private ApplicationDbContext _dbContext;
         private readonly ICapPublisher _capBus;
         private IServiceScope _serviceScope;
@@ -37,25 +36,22 @@ namespace IoTSharp.Services
             _logger = logger;
             _serviceScope = scopeFactor.CreateScope();
             _dbContext = _serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            _capBus = capBus; 
+            _capBus = capBus;
             Enum.GetNames(typeof(CoApRes)).ToList().ForEach(n => server.Add(new CoApResource(n, _serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>(), _logger, _capBus)));
         }
 
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(() =>
-            {
-                server.Start();
-            });
+            server.Start();
+            return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            return Task.Run(() =>
-            {
-                server.Stop();
-            });
+
+            server.Stop();
+            return Task.CompletedTask;
         }
     }
 }

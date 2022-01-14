@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace IoTSharp.Data
         /// <summary>
         /// 设备ID
         /// </summary>
-        [Key]
+       
         public Guid Id { get; set; } = Guid.NewGuid();
         /// <summary>
         /// 设备名称
@@ -49,7 +50,17 @@ namespace IoTSharp.Data
         /// </summary>
         public Customer Customer { get; set; }
 
+        public int Status { get; set; }
 
+
+        public DeviceModel? DeviceModel { get; set; }
+        public Guid? DeviceModelId { get; set; }
+
+        //public DateTime? CreateDateTime { get; set; }
+        //public string? CreateMonth { get; set; }
+
+        //[Column(TypeName = "Date")]
+        //public DateTime? CreateDate { get; set; }
 
     }
 }

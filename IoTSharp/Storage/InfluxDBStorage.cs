@@ -6,7 +6,6 @@ using InfluxDB.Client.Writes;
 using IoTSharp.Data;
 using IoTSharp.Dtos;
 using IoTSharp.Extensions;
-using IoTSharp.Queue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
@@ -126,11 +125,37 @@ from(bucket: ""{_bucket}"")
                     {
                         KeyName = fr.GetField(),
                         DateTime = fr.GetTimeInDateTime().GetValueOrDefault(DateTime.MinValue).ToLocalTime(),
-                        Value = fr.GetValue()
+                        Value = fr.GetValue() ,
+                         DataType= InfluxTypeToIoTSharpType(ft.Columns.Find(fv=>fv.Label=="_value")?.DataType)
                     });
                 });
             });
             return dt;
+        }
+        Data.DataType InfluxTypeToIoTSharpType(string _itype)
+        {
+            Data.DataType data = DataType.String;
+            switch (_itype)
+            {
+                case "long":
+                    data = DataType.Long;
+                    break;
+                case "double":
+                    data = DataType.Double;
+                    break;
+                case "boolean":
+                case "bool":
+                    data = DataType.Boolean;
+                    break;
+                case "dateTime:RFC3339":
+                    data = DataType.DateTime;
+                    break;
+                case "string":
+                default:
+                    data = DataType.String;
+                    break;
+            }
+            return data;
         }
 
         public Task<List<TelemetryDataDto>> LoadTelemetryAsync(Guid deviceId, DateTime begin)
@@ -152,9 +177,10 @@ from(bucket: ""{_bucket}"")
             return FluxToDtoAsync(v);
         }
 
-        public async Task<bool> StoreTelemetryAsync(RawMsg msg)
+        public async Task<(bool result, List<TelemetryData> telemetries)> StoreTelemetryAsync(RawMsg msg  )
         {
             bool result = false;
+            List<TelemetryData> telemetries = new List<TelemetryData>(); ;
             try
             {
                
@@ -171,17 +197,17 @@ from(bucket: ""{_bucket}"")
                             {
                                 case DataType.Boolean:
                                     // point.Field("value_type", "value_boolean");
-                                    point= point.Field(tdata.KeyName, tdata.Value_Boolean);
+                                  if (tdata.Value_Boolean.HasValue)  point = point.Field(tdata.KeyName, tdata.Value_Boolean.Value);
                                     break;
                                 case DataType.String:
                                     //point.Field("value_string", "value_boolean");
                                     point = point.Field(tdata.KeyName, tdata.Value_String);
                                     break;
                                 case DataType.Long:
-                                    point = point.Field(tdata.KeyName, tdata.Value_Long);
+                                    if (tdata.Value_Long.HasValue) point = point.Field(tdata.KeyName, tdata.Value_Long.Value);
                                     break;
                                 case DataType.Double:
-                                    point = point.Field(tdata.KeyName, tdata.Value_Double);
+                                    if (tdata.Value_Double.HasValue) point = point.Field(tdata.KeyName, tdata.Value_Double.Value);
                                     break;
                                 case DataType.Json:
                                     point = point.Field(tdata.KeyName, tdata.Value_Json);
@@ -193,13 +219,17 @@ from(bucket: ""{_bucket}"")
                                     point = point.Field(tdata.KeyName, Hex.ToHexString(tdata.Value_Binary));
                                     break;
                                 case DataType.DateTime:
-                                    point = point.Field(tdata.KeyName, tdata.Value_DateTime.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalMilliseconds);
+                                    point = point.Field(tdata.KeyName, tdata.Value_DateTime.GetValueOrDefault().Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0)).TotalMilliseconds);
                                     break;
                                 default:
                                     break;
                             }
-                            point = point.Timestamp(DateTime.UtcNow, WritePrecision.Ns);
-                            lst.Add(point);
+                            if (point.HasFields())
+                            {
+                                point = point.Timestamp(DateTime.UtcNow, WritePrecision.Ns);
+                                lst.Add(point);
+                                telemetries.Add(tdata);
+                            }
                         }
                     });
 
@@ -214,7 +244,7 @@ from(bucket: ""{_bucket}"")
             {
                 _logger.LogError(ex, $"{msg.DeviceId}数据处理失败{ex.Message} {ex.InnerException?.Message} ");
             }
-            return result;
+            return (result, telemetries);
         }
     }
 }

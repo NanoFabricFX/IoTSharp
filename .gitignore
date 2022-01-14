@@ -349,3 +349,15 @@ ASALocalRun/
 /IoTSharp/health_checks.db
 /ClientApp/Vue/build
 /ClientApp/Vue/mock
+/ClientApp/Vue/package-lock.json
+/Deployments/rabbit_mongo_influx/data
+/Deployments/rabbit_mongo_influx/data
+/Deployments/rabbit_mongo_influx/data/influxdb-data
+*.bolt
+*.wt
+/Deployments/rabbit_mongo_influx/data
+/IoTSharp/ca.key
+/IoTSharp/ca.crt
+/IoTSharp/server.key
+/IoTSharp/server.crt
+/buildimageqhse.cmd

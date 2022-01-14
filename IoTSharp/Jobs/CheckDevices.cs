@@ -43,18 +43,16 @@ namespace IoTSharp.Jobs
                    {
                        try
                        {
-
                            var _device = cs.Session.Items?.FirstOrDefault(k => (string)k.Key == nameof(Device)).Value as Device;
-                           var d = _dbContext.Device.FirstOrDefault(d => d.Id == _device.Id);
-                           if (d != null)
+                           if (_device != null)
                            {
-
-                               d.LastActive = cs.LastPacketReceivedTimestamp.ToLocalTime();
-                               d.Online = DateTime.Now.Subtract(d.LastActive).TotalSeconds < d.Timeout;
-                               _logger.LogInformation($"设备{cs.ClientId}-{d.Name}({d.Id},{cs.Endpoint}) 最后活动时间{d.LastActive} 在线{d.Online} 发送消息:{cs.SentApplicationMessagesCount}({cs.BytesSent}kb)  收到{cs.ReceivedApplicationMessagesCount}({cs.BytesReceived / 1024}KB )  ");
-                               if (!d.Online && DateTime.Now.Subtract(d.LastActive).TotalSeconds>d.Timeout*5)
+                               var d = _dbContext.Device.FirstOrDefault(d => d.Id == _device.Id);
+                               if (d != null)
                                {
-                                   Task.Run(cs.DisconnectAsync);
+                                   if (!d.Online && DateTime.Now.Subtract(d.LastActive).TotalSeconds > d.Timeout)
+                                   {
+                                       Task.Run(cs.DisconnectAsync);
+                                   }
                                }
                            }
                        }
@@ -69,7 +67,10 @@ namespace IoTSharp.Jobs
                     //当前时间减去最后活跃时间如果小于超时时间， 则为在线， 否则就是离线
                     _dbContext.Device.ToList().ForEach(d =>
                     {
-                        d.Online = DateTime.Now.Subtract(d.LastActive).TotalSeconds < d.Timeout;
+                         if  (d.Online  &&   DateTime.Now.Subtract(d.LastActive).TotalSeconds > d.Timeout)
+                        {
+                            d.Online = false;
+                        }
                     });
                     var saveresult = await _dbContext.SaveChangesAsync();
                     _logger.LogInformation($"设备检查程序已经处理{saveresult}调数据");

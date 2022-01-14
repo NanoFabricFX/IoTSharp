@@ -1,23 +1,18 @@
 ﻿using IoTSharp.Data;
 using IoTSharp.Dtos;
-using IoTSharp.Extensions;
+using IoTSharp.X509Extensions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Security.Claims;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Silkier.AspNetCore;
 
 namespace IoTSharp.Controllers
 {
@@ -34,12 +29,13 @@ namespace IoTSharp.Controllers
         private readonly IConfiguration _configuration;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly ApplicationDBInitializer _dBInitializer;
+        private readonly AppSettings _setting;
 
         public InstallerController(
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             IConfiguration configuration, ILogger<AccountController> logger, ApplicationDbContext context
-           , ApplicationDBInitializer dBInitializer)
+           , ApplicationDBInitializer dBInitializer,IOptions<AppSettings> options)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -47,7 +43,9 @@ namespace IoTSharp.Controllers
             _logger = logger;
             _context = context;
             _dBInitializer = dBInitializer;
+            _setting = options.Value;
         }
+
         /// <summary>
         /// 检查IoTSharp实例信息
         /// </summary>
@@ -57,49 +55,80 @@ namespace IoTSharp.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesDefaultResponseType]
-        public ActionResult<InstanceDto> Instance()
+        public ApiResult<InstanceDto> Instance()
         {
             try
             {
-                return base.Ok(GetInstanceDto());
+                return new ApiResult<InstanceDto>(ApiCode.Success, "Ok", GetInstanceDto());
             }
             catch (Exception ex)
             {
-                return this.ExceptionRequest(ApiCode.Exception,ex.Message, ex);
+                return new ApiResult<InstanceDto>(ApiCode.Exception, ex.Message, null);
             }
         }
 
         private InstanceDto GetInstanceDto()
         {
-            return new InstanceDto() { Installed = _context.Relationship.Any(), Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() };
+
+            return new InstanceDto() { Installed = _context.Relationship.Any(), Domain = this.Request.Host.Value, Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(), CACertificate= _setting.MqttBroker.CACertificate != null };
+        }
+
+        /// <summary>
+        /// 域名可以不配置， 默认会使用机器名  
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = nameof(UserRole.SystemAdmin))]
+        [HttpPost]
+        public ApiResult CreateRootCertificate(CreateRootCertificateDto m)
+        {
+            ApiResult result = new ApiResult(ApiCode.Success, "OK");
+            if (_setting.MqttBroker.CACertificate != null)
+            {
+                result = new ApiResult(ApiCode.AlreadyExists, "CACertificate already exists.");
+            }
+            else if (string.IsNullOrEmpty(m.Domain))
+            {
+                result = new ApiResult(ApiCode.AlreadyExists, "ServerIPAddress     is required.");
+            }
+            else
+            {
+                var ip = IPAddress.Parse(m.Domain);
+                var ten = _context.GetTenant(this.GetNowUserTenantId());
+                var option = _setting.MqttBroker;
+                var ca = ip.CreateCA(option.CACertificateFile, option.CAPrivateKeyFile);
+                ca.CreateBrokerTlsCert(_setting.MqttBroker.DomainName?? Dns.GetHostName(), ip, option.CertificateFile, option.PrivateKeyFile, ten.EMail);
+                ca.LoadCAToRoot();
+                result = new ApiResult(ApiCode.Success, ca.Thumbprint);
+
+            }
+            return result;
         }
 
         [AllowAnonymous]
         [HttpPost]
-        public async Task<ActionResult<InstanceDto>> Install([FromBody] InstallDto model)
+        public async Task<ApiResult<InstanceDto>> Install([FromBody] InstallDto model)
         {
-            ActionResult<InstanceDto> actionResult = NoContent();
             try
             {
                 if (!_context.Relationship.Any())
                 {
                     await _dBInitializer.SeedRoleAsync();
                     await _dBInitializer.SeedUserAsync(model);
-                    actionResult = Ok(GetInstanceDto());
+                    await _dBInitializer.SeedDictionary();
+                    //     await _dBInitializer.SeedI18N();
+                    //     actionResult = Ok(GetInstanceDto());
+
+                    return new ApiResult<InstanceDto>(ApiCode.Success, "Ok", GetInstanceDto());
                 }
                 else
                 {
-                    actionResult = Ok(new { code = ApiCode.AlreadyExists, msg = "Already installed", data = GetInstanceDto() });
+                    return new ApiResult<InstanceDto>(ApiCode.AlreadyExists, "Already installed", GetInstanceDto());
                 }
             }
             catch (Exception ex)
             {
-                actionResult = Ok(new { code = ApiCode.Exception, msg = ex.Message});
+                return new ApiResult<InstanceDto>(ApiCode.Exception, ex.Message, null);
             }
-            return actionResult;
         }
-
-
-
     }
 }

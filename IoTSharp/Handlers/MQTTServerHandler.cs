@@ -2,8 +2,8 @@
 using EasyCaching.Core;
 using IoTSharp.Data;
 using IoTSharp.Extensions;
+using IoTSharp.FlowRuleEngine;
 using IoTSharp.Handlers;
-using IoTSharp.Queue;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,17 +31,24 @@ namespace IoTSharp.Handlers
         private readonly IEasyCachingProviderFactory _factory;
         readonly IMqttServerEx _serverEx;
         private readonly ICapPublisher _queue;
+        private readonly FlowRuleProcessor _flowRuleProcessor;
+        private readonly IEasyCachingProvider _caching;
         readonly MqttClientSetting _mcsetting;
+        private readonly AppSettings _settings;
+
         public MQTTServerHandler(ILogger<MQTTServerHandler> logger, IServiceScopeFactory scopeFactor, IMqttServerEx serverEx
-           , IOptions<AppSettings> options, ICapPublisher queue, IEasyCachingProviderFactory factory
+           , IOptions<AppSettings> options, ICapPublisher queue, IEasyCachingProviderFactory factory, FlowRuleProcessor flowRuleProcessor
             )
         {
             _mcsetting = options.Value.MqttClient;
+            _settings = options.Value;
             _logger = logger;
             _scopeFactor = scopeFactor;
             _factory = factory;
             _serverEx = serverEx;
             _queue = queue;
+            _flowRuleProcessor = flowRuleProcessor;
+            _caching = factory.GetCachingProvider("iotsharp");
         }
 
         static long clients = 0;
@@ -62,122 +69,205 @@ namespace IoTSharp.Handlers
         {
             _logger.LogInformation($"Server is stopped");
         }
-        Dictionary<string, int> lstTopics = new Dictionary<string, int>();
         long received = 0;
-        internal void Server_ApplicationMessageReceived(object sender, MqttApplicationMessageReceivedEventArgs e)
+        internal async void Server_ApplicationMessageReceived(object sender, MqttApplicationMessageReceivedEventArgs e)
         {
             if (string.IsNullOrEmpty(e.ClientId))
             {
-                _logger.LogInformation($"Message: Topic=[{e.ApplicationMessage.Topic }]");
+                _logger.LogInformation($"ClientId为空,无法进一步获取设备信息 Topic=[{e.ApplicationMessage.Topic }]");
             }
             else
             {
-                Task.Run(async () =>
+                try
                 {
-                    try
+                    _logger.LogInformation($"Server received {e.ClientId}'s message: Topic=[{e.ApplicationMessage.Topic }],Retain=[{e.ApplicationMessage.Retain}],QualityOfServiceLevel=[{e.ApplicationMessage.QualityOfServiceLevel}]");
+                    string topic = e.ApplicationMessage.Topic;
+                    var tpary = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    var _dev = await FoundDevice(e.ClientId);
+                    
+                    if (tpary.Length >= 3 && tpary[0] == "devices" && _dev != null)
                     {
-                        _logger.LogInformation($"Server received {e.ClientId}'s message: Topic=[{e.ApplicationMessage.Topic }],Retain=[{e.ApplicationMessage.Retain}],QualityOfServiceLevel=[{e.ApplicationMessage.QualityOfServiceLevel}]");
-                        if (!lstTopics.ContainsKey(e.ApplicationMessage.Topic))
+                        Device device = JudgeOrCreateNewDevice(tpary, _dev);
+                        if (device != null)
                         {
-                            lstTopics.Add(e.ApplicationMessage.Topic, 1);
-                            await _serverEx.PublishAsync("$SYS/broker/subscriptions/count", lstTopics.Count.ToString());
-                        }
-                        else
-                        {
-                            lstTopics[e.ApplicationMessage.Topic]++;
-                        }
-                        if (e.ApplicationMessage.Payload != null)
-                        {
-                            received += e.ApplicationMessage.Payload.Length;
-                        }
-                        string topic = e.ApplicationMessage.Topic;
-                        var tpary = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                        var _dev = await FoundDevice(e.ClientId);
-                        if (tpary.Length >= 3 && tpary[0] == "devices" && _dev != null)
-                        {
-                            Device device = JudgeOrCreateNewDevice(tpary, _dev);
-                            if (device != null)
+                            bool statushavevalue = false;
+                            Dictionary<string, object> keyValues = new Dictionary<string, object>();
+                            if (tpary.Length >= 4)
                             {
-                                Dictionary<string, object> keyValues = new Dictionary<string, object>();
-                                if (tpary.Length >= 4)
-                                {
-                                    string keyname = tpary.Length >= 5 ? tpary[4] : tpary[3];
-                                    if (tpary[3].ToLower() == "xml")
-                                    {
-                                        try
-                                        {
-                                            var xml = new System.Xml.XmlDocument();
-                                            xml.LoadXml(e.ApplicationMessage.ConvertPayloadToString());
-                                            keyValues.Add(keyname, xml);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            _logger.LogWarning(ex, $"xml data error {topic},{ex.Message}");
-                                        }
-                                    }
-                                    else if (tpary[3].ToLower() == "binary")
-                                    {
-                                        keyValues.Add(keyname, e.ApplicationMessage.Payload);
-                                    }
-                                }
-                                else
+                                string keyname = tpary.Length >= 5 ? tpary[4] : tpary[3];
+                                if (tpary[3].ToLower() == "xml")
                                 {
                                     try
                                     {
-                                        keyValues = e.ApplicationMessage.ConvertPayloadToDictionary();
+                                        var xml = new System.Xml.XmlDocument();
+                                        xml.LoadXml(e.ApplicationMessage.ConvertPayloadToString());
+                                        keyValues.Add(keyname, xml);
                                     }
                                     catch (Exception ex)
                                     {
-                                        _logger.LogWarning(ex, $"ConvertPayloadToDictionary   Error {topic},{ex.Message}");
+                                        _logger.LogWarning(ex, $"xml data error {topic},{ex.Message}");
                                     }
                                 }
-                                if (tpary[2] == "telemetry")
+                                else if (tpary[3].ToLower() == "binary")
                                 {
-                                    _queue.PublishTelemetryData(new RawMsg() { DeviceId = device.Id, MsgBody = keyValues, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.TelemetryData });
+                                    keyValues.Add(keyname, e.ApplicationMessage.Payload);
                                 }
-                                else if (tpary[2] == "attributes")
-                                {
-                                    if (tpary.Length > 3 && tpary[3] == "request")
-                                    {
-                                        await RequestAttributes(tpary, e.ApplicationMessage.ConvertPayloadToDictionary(), device);
-                                    }
-                                    else
-                                    {
-                                        _queue.PublishAttributeData(new RawMsg() { DeviceId = device.Id, MsgBody = keyValues, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.AttributeData });
-                                    }
-
-                                }
-                                else
-                                {
-                                    _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}未能识别格式");
-                                }
-
                             }
                             else
                             {
-                                _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}未能匹配到设备");
+                                try
+                                {
+                                    keyValues = e.ApplicationMessage.ConvertPayloadToDictionary();
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, $"转换为字典格式失败 {topic},{ex.Message}");
+                                }
+                            }
+                            if (tpary[2] == "telemetry")
+                            {
+                                _queue.PublishTelemetryData(new RawMsg() { DeviceId = device.Id, MsgBody = keyValues, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.TelemetryData });
+                            }
+                            else if (tpary[2] == "attributes")
+                            {
+                                if (tpary.Length > 3 && tpary[3] == "request")
+                                {
+                                    await RequestAttributes(tpary, e.ApplicationMessage.ConvertPayloadToDictionary(), device);
+                                }
+                                else
+                                {
+                                    _queue.PublishAttributeData(new RawMsg() { DeviceId = device.Id, MsgBody = keyValues, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.AttributeData });
+                                }
+                            }
+                            else if (tpary[2] == "status" )
+                            {
+                                ResetDeviceStatus(device, tpary[3] == "online");
+                                statushavevalue = true;
+                            }
+                            else if (tpary[2] == "rpc")
+                            {
+                                if (tpary[3]== "request")
+                                {
+                                    await ExecFlowRules(e, _dev.DeviceType == DeviceType.Gateway ? device : _dev, tpary[4], MountType.RPC);//完善后改成 RPC 
+                                }
+                            }
+                            else
+                            {
+                                await ExecFlowRules(e, _dev.DeviceType == DeviceType.Gateway ? device : _dev, MountType.RAW);//如果是网关
+                            }
+                            if (!statushavevalue)
+                            {
+                                ResetDeviceStatus(device);
                             }
                         }
                         else
                         {
-                            _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}未能识别");
+                            _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}未能匹配到设备");
                         }
-                      
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        e.ProcessingFailed = true;
-                        _logger.LogWarning(ex, $"ApplicationMessageReceived {ex.Message} {ex.InnerException?.Message}");
+                        //tpary.Length >= 3 && tpary[0] == "devices" && _dev != null
+                        _logger.LogWarning($"不支持{e.ClientId}的{e.ApplicationMessage.Topic}格式,Length:{tpary.Length },{tpary[0] },{ _dev != null}");
                     }
-                }).Wait(TimeSpan.FromSeconds(5));
+                }
+                catch (Exception ex)
+                {
+                    e.ProcessingFailed = true;
+                    _logger.LogWarning(ex, $"ApplicationMessageReceived {ex.Message} {ex.InnerException?.Message}");
+                }
+
+            }
+        }
+
+        private void ResetDeviceStatus(Device device,bool status=true)
+        {
+            _logger.LogInformation($"重置状态{device.Id} {device.Name}");
+            if (device.DeviceType == DeviceType.Device && device.Owner != null && device.Owner?.Id != null && device.Owner?.Id !=Guid.Empty)//虚拟设备上线
+            {
+                _queue.PublishDeviceStatus(device.Id, status);
+                _queue.PublishDeviceStatus(device.Owner.Id, status);
+                _logger.LogInformation($"重置网关状态{device.Owner.Id} {device.Owner.Name}");
+            }
+            else
+            {
+                _queue.PublishDeviceStatus(device.Id, status);
+            }
+        }
+
+        private async Task ExecFlowRules(MqttApplicationMessageReceivedEventArgs e, Device _dev, string method, MountType mount)
+        {
+            var rules = await _caching.GetAsync($"ruleid_{_dev.Id}_rpc_{method}", async () =>
+            {
+                using (var scope = _scopeFactor.CreateScope())
+                using (var _dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
+                {
+                    var guids = await _dbContext.GerDeviceRpcRulesList(_dev.Id, mount,method);
+                    return guids;
+                }
+            }
+            , TimeSpan.FromSeconds(_settings.RuleCachingExpiration));
+            if (rules.HasValue)
+            {
+                var obj = new { e.ApplicationMessage.Topic, Payload = Convert.ToBase64String(e.ApplicationMessage.Payload), e.ClientId };
+            
+                    _logger.LogInformation($"{e.ClientId}的rpc调用{e.ApplicationMessage.Topic} 方法 {method}通过规则链{rules.Value}进行处理。");
+                    await _flowRuleProcessor.RunFlowRules(rules.Value, obj, _dev.Id, EventType.Normal, null);
+            }
+            else
+            {
+                _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}不符合规范， 也无相关规则链处理。");
+            }
+        }
+        private async Task ExecFlowRules(MqttApplicationMessageReceivedEventArgs e, Device _dev, MountType mount)
+        {
+            var rules = await _caching.GetAsync($"ruleid_{_dev.Id}_raw", async () =>
+            {
+                using (var scope = _scopeFactor.CreateScope())
+                using (var _dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
+                {
+                    var guids = await _dbContext.GerDeviceRulesIdList(_dev.Id, mount);
+                    return guids;
+                }
+            }
+            , TimeSpan.FromSeconds(_settings.RuleCachingExpiration));
+            if (rules.HasValue)
+            {
+                var obj = new { e.ApplicationMessage.Topic, Payload = Convert.ToBase64String(e.ApplicationMessage.Payload), e.ClientId };
+                rules.Value.ToList().ForEach(async g =>
+                {
+                    _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}通过规则链{g}进行处理。");
+                    await _flowRuleProcessor.RunFlowRules(g, obj, _dev.Id, EventType.Normal, null);
+                });
+            }
+            else
+            {
+                _logger.LogInformation($"{e.ClientId}的数据{e.ApplicationMessage.Topic}不符合规范， 也无相关规则链处理。");
             }
         }
 
         private async Task<Device> FoundDevice(string clientid)
         {
-            var ss = await _serverEx.GetSessionStatusAsync();
-            var _device = ss.FirstOrDefault(s => s.ClientId == clientid)?.Items?.FirstOrDefault(k => (string)k.Key == nameof(Device)).Value as Device;
-            return _device;
+            Device device = null;
+            var clients = await _serverEx.GetClientStatusAsync();
+            var client = clients.FirstOrDefault(c => c.ClientId == clientid);
+            if (client != null)
+            {
+                device = client.Session?.Items?.FirstOrDefault(k => (string)k.Key == nameof(Device)).Value as Device;
+                if (device==null)
+                {
+                    if (clientid != _mcsetting.MqttBroker)
+                    {
+                        _logger.LogWarning($"未能找到客户端{clientid  }回话附加的设备信息，现在断开此链接。 ");
+                        await client.DisconnectAsync();
+                    }
+                }
+            }
+            else
+            {
+                _logger.LogWarning($"未能找到客户端{clientid  }上下文信息");
+            }
+            return device;
         }
 
         private async Task RequestAttributes(string[] tpary, Dictionary<string, object> keyValues, Device device)
@@ -264,10 +354,9 @@ namespace IoTSharp.Handlers
 
         }
 
-        internal void Server_ClientDisconnected(IMqttServerEx server, MqttServerClientDisconnectedEventArgs args)
+        internal async void Server_ClientDisconnected(IMqttServerEx server, MqttServerClientDisconnectedEventArgs args)
         {
-            Task.Run(async () =>
-            {
+         
                 try
                 {
                     var dev = await FoundDevice(args.ClientId);
@@ -293,7 +382,7 @@ namespace IoTSharp.Handlers
                     _logger.LogError(ex, $"Server_ClientDisconnected ClientId:{args.ClientId} DisconnectType:{args.DisconnectType},{ex.Message}");
 
                 }
-            });
+       
         }
 
         private Device JudgeOrCreateNewDevice(string[] tpary, Device device)
@@ -313,21 +402,18 @@ namespace IoTSharp.Handlers
                         devicedatato = new Device() { Id = Guid.NewGuid(), Name = tpary[1], DeviceType = DeviceType.Device, Tenant = gw.Tenant, Customer = gw.Customer, Owner = gw,  LastActive = DateTime.Now, Timeout = 300 };
                         gw.Children.Add(devicedatato);
                         _dbContext.AfterCreateDevice(devicedatato);
-                        gw.LastActive = DateTime.Now;
-                        gw.Online = true;
+                        _logger.LogInformation($"网关 {gw.Id}-{gw.Name}在线.最后活动时间{gw.LastActive},添加了子设备{devicedatato.Name}");
                     }
                     else
                     {
                         devicedatato = subdev.FirstOrDefault();
-                        devicedatato.LastActive = DateTime.Now;
-                        devicedatato.Online = true;
+                        _logger.LogInformation($"网关子设备 {devicedatato.Id}-{devicedatato.Name}在线.最后活动时间{devicedatato.LastActive}");
                     }
                 }
                 else
                 {
                     devicedatato = _dbContext.Device.Find(device.Id);
-                    devicedatato.LastActive = DateTime.Now;
-                    devicedatato.Online = true;
+                    _logger.LogInformation($"独立设备 {devicedatato.Id}-{devicedatato.Name}在线.最后活动时间{devicedatato.LastActive}");
                 }
                 _dbContext.SaveChanges();
             }
@@ -335,7 +421,7 @@ namespace IoTSharp.Handlers
         }
 
         long Subscribed;
-        internal void Server_ClientSubscribedTopic(object sender, MqttServerClientSubscribedTopicEventArgs e)
+        internal  async  Task Server_ClientSubscribedTopic(object sender, MqttServerClientSubscribedTopicEventArgs e)
         {
             _logger.LogInformation($"Client [{e.ClientId}] subscribed [{e.TopicFilter}]");
 
@@ -345,11 +431,11 @@ namespace IoTSharp.Handlers
                 {
                     var mename = typeof(MQTTServerHandler).Assembly.GetName();
                     var mqttnet = typeof(MqttServerClientSubscribedTopicEventArgs).Assembly.GetName();
-                    Task.Run(() => _serverEx.PublishAsync("$SYS/broker/version", $"{mename.Name}V{mename.Version.ToString()},{mqttnet.Name}.{mqttnet.Version.ToString()}"));
+                    await _serverEx.PublishAsync("$SYS/broker/version", $"{mename.Name}V{mename.Version.ToString()},{mqttnet.Name}.{mqttnet.Version.ToString()}");
                 }
                 else if (e.TopicFilter.Topic.StartsWith("$SYS/broker/uptime"))
                 {
-                    Task.Run(() => _serverEx.PublishAsync("$SYS/broker/uptime", uptime.ToString()));
+                    await _serverEx.PublishAsync("$SYS/broker/uptime", uptime.ToString());
                 }
             }
             if (e.TopicFilter.Topic.ToLower().StartsWith("/devices/telemetry"))
@@ -360,10 +446,8 @@ namespace IoTSharp.Handlers
             else
             {
                 Subscribed++;
-                Task.Run(() => _serverEx.PublishAsync("$SYS/broker/subscriptions/count", Subscribed.ToString()));
+               await  _serverEx.PublishAsync("$SYS/broker/subscriptions/count", Subscribed.ToString());
             }
-
-
         }
 
         internal void Server_ClientUnsubscribedTopic(object sender, MqttServerClientUnsubscribedTopicEventArgs e)
@@ -387,8 +471,19 @@ namespace IoTSharp.Handlers
                 using (var _dbContextcv = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
                 {
                     MqttConnectionValidatorContext obj = e.Context;
-                    Uri uri = new Uri("mqtt://" + obj.Endpoint);
-                    if (uri.IsLoopback && !string.IsNullOrEmpty(e.Context.ClientId) && e.Context.ClientId == _mcsetting.MqttBroker && !string.IsNullOrEmpty(e.Context.Username) && e.Context.Username == _mcsetting.UserName && e.Context.Password == _mcsetting.Password)
+
+                    // jy 特殊处理 ::1
+                    var isLoopback = false;
+                    if (obj.Endpoint?.StartsWith("::1") == true)
+                    {
+                        isLoopback = true;
+                    }
+                    else
+                    {
+                        Uri uri = new Uri("mqtt://" + obj.Endpoint);
+                        isLoopback = uri.IsLoopback;
+                    }
+                    if (isLoopback && !string.IsNullOrEmpty(e.Context.ClientId) && e.Context.ClientId == _mcsetting.MqttBroker && !string.IsNullOrEmpty(e.Context.Username) )
                     {
                         e.Context.ReasonCode = MQTTnet.Protocol.MqttConnectReasonCode.Success;
                     }
@@ -454,7 +549,7 @@ namespace IoTSharp.Handlers
             {
                 e.Context.ReasonCode = MQTTnet.Protocol.MqttConnectReasonCode.ImplementationSpecificError;
                 e.Context.ReasonString = ex.Message;
-                _logger.LogError(ex, "ConnectionRefusedServerUnavailable2222222222222 {0}", ex.Message);
+                _logger.LogError(ex, "ConnectionRefusedServerUnavailable {0}", ex.Message);
             }
 
 

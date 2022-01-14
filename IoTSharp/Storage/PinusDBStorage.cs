@@ -2,7 +2,6 @@
 using IoTSharp.Data;
 using IoTSharp.Dtos;
 using IoTSharp.Extensions;
-using IoTSharp.Queue;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
@@ -176,9 +175,10 @@ namespace IoTSharp.Storage
             });
             return dt;
         }
-        public Task<bool> StoreTelemetryAsync(RawMsg msg)
+        public Task<(bool result, List<TelemetryData> telemetries)> StoreTelemetryAsync(RawMsg msg)
         {
             bool result = false;
+            List<TelemetryData> telemetries = new List<TelemetryData>();
             PinusConnection _pinus = _pinuspool.Get();
             try
             {
@@ -254,7 +254,9 @@ namespace IoTSharp.Storage
                         {
                             _logger.LogError(ex, $"{msg.DeviceId}数据处理失败{ex.Message} {ex.InnerException?.Message}");
                         }
+                        telemetries.Add(tdata);
                     }
+                  
                 });
 
             }
@@ -266,7 +268,7 @@ namespace IoTSharp.Storage
             {
                 _pinuspool.Return(_pinus);
             }
-            return Task.FromResult(result);
+            return Task.FromResult((result, telemetries));
         }
 
         private static string GetDevTableName(RawMsg msg) => $"telemetrydata_{msg.DeviceId:N}";

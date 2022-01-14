@@ -16,7 +16,7 @@ namespace IoTSharp.Data.SqlServer.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.3")
+                .HasAnnotation("ProductVersion", "5.0.12")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("IoTSharp.Data.AuditLog", b =>
@@ -94,6 +94,253 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.ToTable("AuthorizedKeys");
                 });
 
+            modelBuilder.Entity("IoTSharp.Data.BaseDictionary", b =>
+                {
+                    b.Property<long>("DictionaryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Dictionary18NKeyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryColor")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("DictionaryGroupId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DictionaryIcon")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryPattern")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DictionaryStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DictionaryTag")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DictionaryValueType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DictionaryValueTypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("DictionaryId");
+
+                    b.ToTable("BaseDictionaries");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.BaseDictionaryGroup", b =>
+                {
+                    b.Property<long>("DictionaryGroupId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("DictionaryGroup18NKeyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryGroupDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryGroupKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DictionaryGroupName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DictionaryGroupStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DictionaryGroupValueType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DictionaryGroupValueTypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("DictionaryGroupId");
+
+                    b.ToTable("BaseDictionaryGroups");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.BaseEvent", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BizData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Bizid")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreaterDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Creator")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EventDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EventName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EventStaus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("FlowRuleRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MataData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("EventId");
+
+                    b.HasIndex("FlowRuleRuleId");
+
+                    b.ToTable("BaseEvents");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.BaseI18N", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<DateTime?>("AddDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("KeyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResouceDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ResouceGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ResourceId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ResourceKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ResourceTag")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ResourceType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ValueBG")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueCS")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueDA")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueDEDE")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueELGR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueENGR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueENUS")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueESES")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueFI")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueFRFR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueHE")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueHRHR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueHU")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueITIT")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueJAJP")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueKOKR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueNL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValuePLPL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValuePT")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueSLSL")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueSR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueSV")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueTRTR")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueUK")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueVI")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueZHCN")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ValueZHTW")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("BaseI18Ns");
+                });
+
             modelBuilder.Entity("IoTSharp.Data.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -160,19 +407,19 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.Property<byte[]>("Value_Binary")
                         .HasColumnType("varbinary(max)");
 
-                    b.Property<bool>("Value_Boolean")
+                    b.Property<bool?>("Value_Boolean")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("Value_DateTime")
+                    b.Property<DateTime?>("Value_DateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<double>("Value_Double")
+                    b.Property<double?>("Value_Double")
                         .HasColumnType("float");
 
                     b.Property<string>("Value_Json")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("Value_Long")
+                    b.Property<long?>("Value_Long")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Value_String")
@@ -218,6 +465,9 @@ namespace IoTSharp.Data.SqlServer.Migrations
 
                     b.Property<Guid?>("OwnerId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
@@ -266,6 +516,389 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.ToTable("DeviceIdentities");
                 });
 
+            modelBuilder.Entity("IoTSharp.Data.DeviceRule", b =>
+                {
+                    b.Property<Guid>("DeviceRuleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ConfigDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ConfigUser")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DeviceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FlowRuleRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DeviceRuleId");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("FlowRuleRuleId");
+
+                    b.ToTable("DeviceRules");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.DynamicFormFieldInfo", b =>
+                {
+                    b.Property<long>("FieldId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<Guid>("Creator")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FieldCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FieldCreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FieldEditDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FieldI18nKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FieldMaxLength")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FieldName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldPattern")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldPocoTypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FieldStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("FieldUIElement")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FieldUIElementSchema")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldUnit")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldValueDataSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldValueLocalDataSource")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FieldValueType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FieldValueTypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("FormId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool?>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsRequired")
+                        .HasColumnType("bit");
+
+                    b.HasKey("FieldId");
+
+                    b.ToTable("DynamicFormFieldInfos");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.DynamicFormFieldValueInfo", b =>
+                {
+                    b.Property<long>("FieldValueId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long?>("BizId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("Creator")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FieldCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FieldCreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("FieldId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FieldName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldUnit")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FieldValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("FieldValueType")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("FromId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("FieldValueId");
+
+                    b.ToTable("DynamicFormFieldValueInfos");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.DynamicFormInfo", b =>
+                {
+                    b.Property<long>("FormId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long?>("BizId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("Creator")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long?>("FormCreator")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FormDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FormLayout")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FormName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FormSchame")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("FormStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FromCreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCompact")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModelClass")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Url")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("FormId");
+
+                    b.ToTable("DynamicFormInfos");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.Flow", b =>
+                {
+                    b.Property<Guid>("FlowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Conditionexpression")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Createor")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ExecutorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FlowRuleRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FlowStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FlowType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Flowdesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Flowname")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Incoming")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NodeProcessClass")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NodeProcessMethod")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NodeProcessParams")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NodeProcessScript")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NodeProcessScriptType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NodeProcessType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ObjectId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Outgoing")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TargetId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TestStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Tester")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("TesterDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("bpmnid")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("FlowId");
+
+                    b.HasIndex("ExecutorId");
+
+                    b.HasIndex("FlowRuleRuleId");
+
+                    b.ToTable("Flows");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.FlowOperation", b =>
+                {
+                    b.Property<Guid>("OperationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AddDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("BaseEventEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BizId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Data")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("FlowId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("FlowRuleRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("NodeStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OperationDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Step")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tag")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("bpmnid")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("OperationId");
+
+                    b.HasIndex("BaseEventEventId");
+
+                    b.HasIndex("FlowId");
+
+                    b.HasIndex("FlowRuleRuleId");
+
+                    b.ToTable("FlowOperations");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.FlowRule", b =>
+                {
+                    b.Property<Guid>("RuleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Creator")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DefinitionsXml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Describes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExecutableCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MountType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ParentRuleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RuleDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("RuleStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RuleType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Runner")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("SubVersion")
+                        .HasColumnType("float");
+
+                    b.HasKey("RuleId");
+
+                    b.ToTable("FlowRules");
+                });
+
             modelBuilder.Entity("IoTSharp.Data.Relationship", b =>
                 {
                     b.Property<Guid>("Id")
@@ -292,6 +925,56 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.ToTable("Relationship");
                 });
 
+            modelBuilder.Entity("IoTSharp.Data.RuleTaskExecutor", b =>
+                {
+                    b.Property<Guid>("ExecutorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AddDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("Creator")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DefaultConfig")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExecutorDesc")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExecutorName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExecutorStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MataData")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Path")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tag")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TestStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Tester")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("TesterDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ExecutorId");
+
+                    b.ToTable("RuleTaskExecutors");
+                });
+
             modelBuilder.Entity("IoTSharp.Data.TelemetryData", b =>
                 {
                     b.Property<Guid>("DeviceId")
@@ -312,19 +995,19 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.Property<byte[]>("Value_Binary")
                         .HasColumnType("varbinary(max)");
 
-                    b.Property<bool>("Value_Boolean")
+                    b.Property<bool?>("Value_Boolean")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("Value_DateTime")
+                    b.Property<DateTime?>("Value_DateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<double>("Value_Double")
+                    b.Property<double?>("Value_Double")
                         .HasColumnType("float");
 
                     b.Property<string>("Value_Json")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("Value_Long")
+                    b.Property<long?>("Value_Long")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Value_String")
@@ -340,8 +1023,6 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.HasIndex("KeyName");
 
                     b.HasIndex("DeviceId", "KeyName");
-
-                    b.HasIndex("DeviceId", "KeyName", "DateTime");
 
                     b.ToTable("TelemetryData");
                 });
@@ -631,6 +1312,15 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("IoTSharp.Data.BaseEvent", b =>
+                {
+                    b.HasOne("IoTSharp.Data.FlowRule", "FlowRule")
+                        .WithMany()
+                        .HasForeignKey("FlowRuleRuleId");
+
+                    b.Navigation("FlowRule");
+                });
+
             modelBuilder.Entity("IoTSharp.Data.Customer", b =>
                 {
                     b.HasOne("IoTSharp.Data.Tenant", "Tenant")
@@ -672,6 +1362,57 @@ namespace IoTSharp.Data.SqlServer.Migrations
                         .HasForeignKey("DeviceId");
 
                     b.Navigation("Device");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.DeviceRule", b =>
+                {
+                    b.HasOne("IoTSharp.Data.Device", "Device")
+                        .WithMany()
+                        .HasForeignKey("DeviceId");
+
+                    b.HasOne("IoTSharp.Data.FlowRule", "FlowRule")
+                        .WithMany()
+                        .HasForeignKey("FlowRuleRuleId");
+
+                    b.Navigation("Device");
+
+                    b.Navigation("FlowRule");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.Flow", b =>
+                {
+                    b.HasOne("IoTSharp.Data.RuleTaskExecutor", "Executor")
+                        .WithMany()
+                        .HasForeignKey("ExecutorId");
+
+                    b.HasOne("IoTSharp.Data.FlowRule", "FlowRule")
+                        .WithMany()
+                        .HasForeignKey("FlowRuleRuleId");
+
+                    b.Navigation("Executor");
+
+                    b.Navigation("FlowRule");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.FlowOperation", b =>
+                {
+                    b.HasOne("IoTSharp.Data.BaseEvent", "BaseEvent")
+                        .WithMany()
+                        .HasForeignKey("BaseEventEventId");
+
+                    b.HasOne("IoTSharp.Data.Flow", "Flow")
+                        .WithMany()
+                        .HasForeignKey("FlowId");
+
+                    b.HasOne("IoTSharp.Data.FlowRule", "FlowRule")
+                        .WithMany()
+                        .HasForeignKey("FlowRuleRuleId");
+
+                    b.Navigation("BaseEvent");
+
+                    b.Navigation("Flow");
+
+                    b.Navigation("FlowRule");
                 });
 
             modelBuilder.Entity("IoTSharp.Data.Relationship", b =>

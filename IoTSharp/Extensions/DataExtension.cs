@@ -1,6 +1,5 @@
 ﻿using IoTSharp.Data;
 using IoTSharp.Dtos;
-using IoTSharp.Queue;
 using Microsoft.AspNetCore.Routing.Matching;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +66,7 @@ namespace IoTSharp.Extensions
                         {
                             var tx = tl.First();
                             tx.FillKVToMe(kp);
+                            // TODO:jy 待重新设计主键
                             tx.DateTime = DateTime.Now;
                             _context.Set<L>().Update(tx).State = EntityState.Modified;
                         }
@@ -186,6 +186,38 @@ namespace IoTSharp.Extensions
                         tdata.Type = DataType.XML;
                         tdata.Value_XML = ((System.Xml.XmlDocument)kp.Value).InnerXml;
                     }
+                    else if (kp.Value.GetType() == typeof(System.Text.Json.JsonElement))
+                    {
+                        var kvx = kp.Value as System.Text.Json.JsonElement?;
+                        if (kvx.HasValue)
+                        {
+                            switch (kvx.Value.ValueKind)
+                            {
+                                case System.Text.Json.JsonValueKind.Undefined:
+                                case System.Text.Json.JsonValueKind.Object:
+                                    break;
+                                case System.Text.Json.JsonValueKind.Array:
+                                    break;
+                                case System.Text.Json.JsonValueKind.String:
+                                    tdata.Type = DataType.String;
+                                    tdata.Value_String = kvx.Value.GetString();
+                                    break;
+                                case System.Text.Json.JsonValueKind.Number:
+                                    tdata.Type = DataType.Double;
+                                    tdata.Value_Double = kvx.Value.GetDouble();
+                                    break;
+                                case System.Text.Json.JsonValueKind.True:
+                                case System.Text.Json.JsonValueKind.False:
+                                    tdata.Type = DataType.Boolean;
+                                    tdata.Value_Boolean = kvx.Value.GetBoolean();
+                                    break;
+                                case System.Text.Json.JsonValueKind.Null:
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
                     else
                     {
                         tdata.Type = DataType.Json;
@@ -249,6 +281,7 @@ namespace IoTSharp.Extensions
 
         public static void AttachValue(this TelemetryDataDto telemetry, DataType datatype,object _value)
         {
+            telemetry.DataType = datatype;
             switch (datatype)
             {
                 case DataType.Boolean:

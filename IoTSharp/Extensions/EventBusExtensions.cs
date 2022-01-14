@@ -1,6 +1,6 @@
 ﻿using DotNetCore.CAP;
 using Dynamitey;
-using IoTSharp.Queue;
+using IoTSharp.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +19,9 @@ namespace IoTSharp.Extensions
         {
             cap.Publish("iotsharp.services.datastream.telemetrydata", msg);
         }
-
+        public static void PublishDeviceStatus(this ICapPublisher cap,  Guid  devid , bool  status)
+        {
+            cap.Publish("iotsharp.services.datastream.devicestatus",  new  DeviceStatus {  DeviceId=devid, Status=status }  );
+        }
     }
 }

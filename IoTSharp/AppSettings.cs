@@ -2,6 +2,7 @@
 using DotNetCore.CAP.Dashboard.NodeDiscovery;
 using EFCore.Sharding;
 using IoTSharp.Data;
+using IoTSharp.X509Extensions;
 using MaiKeBing.HostedService.ZeroMQ;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace IoTSharp
@@ -74,13 +76,16 @@ namespace IoTSharp
         public int ConsumerThreadCount { get; set; } = Environment.ProcessorCount;
         public int DbContextPoolSize { get; set; } = 128;
         public CachingUseIn CachingUseIn { get; set; } = CachingUseIn.InMemory;
-        public  string CachingUseRedisHosts { get; set; }
+        public string CachingUseRedisHosts { get; set; }
         public DiscoveryOptions Discovery { get; set; } = null;
         public ZMQOption ZMQOption { get; set; } = null;
         public int SucceedMessageExpiredAfter { get; set; } = 3600 * 6;
         public DataBaseType DataBase { get; set; } = DataBaseType.PostgreSql;
+        public int RuleCachingExpiration { get; set; } = 60;
+        public string SilkierUsername { get; set; }
+        public string SilkierPassword { get; set; }
     }
-  
+
     public class ShardingSetting
     {
         public DatabaseType DatabaseType { get; set; } = DatabaseType.PostgreSql;
@@ -109,5 +114,46 @@ namespace IoTSharp
         public string Certificate { get; set; }
         public SslProtocols SslProtocol { get; set; } = SslProtocols.None;
         public bool PersistRetainedMessages { get; set; }
+
+
+        X509Certificate2 _CACertificate;
+        public X509Certificate2 CACertificate
+        {
+            get
+            {
+                if (_CACertificate == null)
+                {
+                    if (System.IO.File.Exists(CACertificateFile) && System.IO.File.Exists(CAPrivateKeyFile))
+                    {
+                        _CACertificate = new X509Certificate2().LoadPem(CACertificateFile, CAPrivateKeyFile);
+                    }
+                }
+                return _CACertificate;
+
+
+            }
+        }
+
+        X509Certificate2 _BrokerCertificate;
+        public X509Certificate2 BrokerCertificate
+        {
+            get
+            {
+                if (_BrokerCertificate == null)
+                {
+                    if (System.IO.File.Exists(CertificateFile) && System.IO.File.Exists(PrivateKeyFile))
+                    {
+                        _BrokerCertificate = new X509Certificate2().LoadPem(CertificateFile, PrivateKeyFile);
+                    }
+                }
+                return _BrokerCertificate;
+            }
+        }
+        public string CACertificateFile { get; set; } = "ca.crt";
+        public string CAPrivateKeyFile { get; set; } = "ca.key";
+        public string CertificateFile { get; set; } ="server.crt";
+        public string PrivateKeyFile { get; set; } = "server.key";
+        public string ServerIPAddress { get;  set; }
+        public string DomainName { get;   set; }
     }
 }
