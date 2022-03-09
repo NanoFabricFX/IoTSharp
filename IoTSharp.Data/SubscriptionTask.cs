@@ -20,7 +20,6 @@ namespace IoTSharp.Data
 
         public string TaskConfig { get; set; }
 
-        public Customer Customer { get; set; }
-        public Guid CustomerId { get; set; }
+    
     }
 }

@@ -1,6 +1,7 @@
 ﻿using IoTSharp.Controllers.Models;
 using IoTSharp.Data;
 using IoTSharp.Dtos;
+using IoTSharp.Extensions;
 using IoTSharp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -40,9 +41,9 @@ namespace IoTSharp.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResult), StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ApiResult<List<Customer>>> GetAllCustomers([FromRoute]  Guid tenantId)
+        public async Task<ApiResult<List<Customer>>> GetAllCustomers([FromRoute] Guid tenantId)
         {
-            return new ApiResult<List<Customer>>(ApiCode.Success, "OK", await _context.Customer.Where(c=>c.Tenant.Id== tenantId ).ToListAsync());
+            return new ApiResult<List<Customer>>(ApiCode.Success, "OK", await _context.Customer.Where(c => c.Tenant.Id == tenantId).ToListAsync());
         }
 
         /// <summary>
@@ -56,8 +57,9 @@ namespace IoTSharp.Controllers
         [ProducesDefaultResponseType]
         public async Task<ApiResult<PagedData<Customer>>> GetCustomers([FromBody] CustomerParam m)
         {
+            var profile = this.GetUserProfile();
 
-            Expression<Func<Customer, bool>> condition = x => x.Tenant.Id ==m.tenantId;
+            Expression<Func<Customer, bool>> condition = x => x.Tenant.Id == profile.Tenant;
 
             //var f = from c in _context.Customer where c.Tenant.Id == select c;
             //if (!f.Any())
@@ -72,7 +74,7 @@ namespace IoTSharp.Controllers
             return new ApiResult<PagedData<Customer>>(ApiCode.Success, "OK", new PagedData<Customer>
             {
                 total = await _context.Customer.CountAsync(condition),
-                rows =await _context.Customer.OrderByDescending(c => c.Id).Where(condition).Skip((m.offset) * m.limit).Take(m.limit).ToListAsync()
+                rows = await _context.Customer.OrderByDescending(c => c.Id).Where(condition).Skip((m.offset) * m.limit).Take(m.limit).ToListAsync()
             });
         }
 

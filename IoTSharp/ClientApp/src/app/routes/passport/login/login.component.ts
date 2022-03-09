@@ -1,26 +1,39 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, Optional } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { StartupService } from '@core';
+import { I18NService, StartupService } from '@core';
 import { ReuseTabService } from '@delon/abc/reuse-tab';
 import { DA_SERVICE_TOKEN, ITokenService, SocialOpenType, SocialService } from '@delon/auth';
-import { SettingsService, _HttpClient } from '@delon/theme';
+import { ALAIN_I18N_TOKEN, SettingsService, _HttpClient } from '@delon/theme';
 import { environment } from '@env/environment';
+
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NzTabChangeEvent } from 'ng-zorro-antd/tabs';
 import { finalize } from 'rxjs/operators';
 
+import { Guid } from 'guid-typescript';
+import { SlidecontrolComponent } from '../../util/slidecontrol/slidecontrol.component';
+import { ControlInput, VertifyQuery } from '../../util/slidecontrol/control';
 @Component({
   selector: 'passport-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.less'],
   providers: [SocialService],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UserLoginComponent implements OnDestroy {
+export class UserLoginComponent implements OnDestroy,OnInit {
+
+   isVertify:boolean=false;
+   clientid= Guid.create();
+  private query: VertifyQuery;
+  public controlInput: ControlInput;
+  @ViewChild(SlidecontrolComponent, {static: true})
+  slide: SlidecontrolComponent;
   constructor(
     fb: FormBuilder,
+    private cdr: ChangeDetectorRef, 
     private router: Router,
     private settingsService: SettingsService,
     private socialService: SocialService,
@@ -31,7 +44,8 @@ export class UserLoginComponent implements OnDestroy {
     private startupSrv: StartupService,
     public http: _HttpClient,
     public msg: NzMessageService,
-    public notification: NzNotificationService
+    public notification: NzNotificationService,
+   
   ) {
     this.form = fb.group({
       userName: ['iotmaster@iotsharp.net', [Validators.required]],
@@ -41,6 +55,13 @@ export class UserLoginComponent implements OnDestroy {
       remember: [true]
     });
   }
+  ngOnInit(): void {
+    this.controlInput = new ControlInput(
+      'api/Captcha/Index?clientid='+this.clientid,
+      'api/Captcha/Vertify?clientid='+this.clientid,
+      false,
+    );
+  }
   ngAfterViewInit(): void {
     localStorage.clear();
 
@@ -49,7 +70,7 @@ export class UserLoginComponent implements OnDestroy {
         if (x.code === 10000) {
           if (x.data.installed) {
           } else {
-            this.router.navigateByUrl('/passport/register');
+            this.router.navigateByUrl('/passport/register?type=install');
           }
         } else {
           this.notification.error('请求错误', 'Api请求不正确');
@@ -77,9 +98,9 @@ export class UserLoginComponent implements OnDestroy {
     return this.form.controls.captcha;
   }
   form: FormGroup;
-  error = '';
-  type = 0;
 
+  type = 0;
+  error: boolean = false;
   // #region get captcha
 
   count = 0;
@@ -90,7 +111,11 @@ export class UserLoginComponent implements OnDestroy {
   switch({ index }: NzTabChangeEvent): void {
     this.type = index!;
   }
+  successMatch($event){
+    
+    this.isVertify=true;
 
+  }
   getCaptcha(): void {
     if (this.mobile.invalid) {
       this.mobile.markAsDirty({ onlySelf: true });
@@ -109,7 +134,7 @@ export class UserLoginComponent implements OnDestroy {
   // #endregion
 
   submit(): void {
-    this.error = '';
+    this.error = false;
     if (this.type === 0) {
       this.userName.markAsDirty();
       this.userName.updateValueAndValidity();
@@ -139,20 +164,24 @@ export class UserLoginComponent implements OnDestroy {
       .subscribe(
         x => {
           if (x.code !== 10000) {
-            this.error = x.msg;
+            this.error = true;
+            this.cdr.detectChanges();
+
+
             return;
           }
           // 清空路由复用信息
           this.reuseTabService.clear();
           // 设置用户Token信息
           // TODO: Mock expired value
-
+        var  expired = +new Date() + 1000 * x.data.token.expires_in
           this.tokenService.set({
             token: x.data.token.access_token,
             Authorization: x.data.token.access_token,
-            expired: x.data.token.expires_in,
-            name: x.data.userName
-          });
+            expired: expired,
+            name: x.data.userName,
+            refreshtoken: x.data.token.refresh_token
+          }); 
 
           this.settingsService.setUser({
             token: x.data.token.access_token,
