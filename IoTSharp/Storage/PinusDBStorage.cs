@@ -94,14 +94,9 @@ namespace IoTSharp.Storage
             return Task.FromResult(dt);
 
         }
+         
 
-        public Task<List<TelemetryDataDto>> LoadTelemetryAsync(Guid deviceId, string keys, DateTime begin)
-        {
-            return LoadTelemetryAsync(deviceId, keys, begin, DateTime.Now);
-        }
-
-
-        public Task<List<TelemetryDataDto>> LoadTelemetryAsync(Guid deviceId, string keys, DateTime begin, DateTime end)
+        public Task<List<TelemetryDataDto>> LoadTelemetryAsync(Guid deviceId, string keys, DateTime begin, DateTime end, TimeSpan every, Aggregate aggregate)
         {
             PinusConnection _pinus = _pinuspool.Get();
             List<TelemetryDataDto> dt = null;
@@ -122,31 +117,7 @@ namespace IoTSharp.Storage
             return Task.FromResult(dt);
 
         }
-
-        public Task<List<TelemetryDataDto>> LoadTelemetryAsync(Guid deviceId, DateTime begin)
-        {
-            return LoadTelemetryAsync(deviceId, begin, DateTime.Now);
-        }
-
-        public Task<List<TelemetryDataDto>> LoadTelemetryAsync(Guid deviceId, DateTime begin, DateTime end)
-        {
-            PinusConnection _pinus = _pinuspool.Get();
-            List<TelemetryDataDto> dt = null;
-            try
-            {
-                string sql = $"select  tbname,keyname  from telemetrydata where deviceid='{deviceId:N}'";
-                dt = SQLToDTByDate(begin, end, _pinus, sql, deviceId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"LoadTelemetryAsync({deviceId}, {begin},{end}){ex.Message}");
-            }
-            finally
-            {
-                _pinuspool.Return(_pinus);
-            }
-            return Task.FromResult(dt);
-        }
+ 
         private List<TelemetryDataDto> SQLToDTByDate(DateTime begin, DateTime end, PinusConnection db, string sql, Guid devid)
         {
             List<TelemetryDataDto> dt = new List<TelemetryDataDto>();
@@ -194,7 +165,7 @@ namespace IoTSharp.Storage
                     if (kp.Value != null)
                     {
                         List<PinusParameter> parameters = new List<PinusParameter>();
-                        TelemetryData tdata = new TelemetryData() { DateTime = DateTime.Now, DeviceId = msg.DeviceId, KeyName = kp.Key, Value_DateTime = new DateTime(1970, 1, 1) };
+                        TelemetryData tdata = new TelemetryData() { DateTime =msg.ts, DeviceId = msg.DeviceId, KeyName = kp.Key, Value_DateTime = new DateTime(1970, 1, 1) };
                         tdata.FillKVToMe(kp);
                         string _type = "";
                         var cmd = _pinus.CreateCommand();

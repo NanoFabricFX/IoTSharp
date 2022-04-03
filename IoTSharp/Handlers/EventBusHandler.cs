@@ -1,6 +1,7 @@
 ﻿using DotNetCore.CAP;
 using EasyCaching.Core;
 using IoTSharp.Data;
+using IoTSharp.Dtos;
 using IoTSharp.Extensions;
 using IoTSharp.FlowRuleEngine;
 using IoTSharp.Storage;
@@ -107,7 +108,7 @@ namespace IoTSharp.Handlers
                             {
                                 obj.TryAdd(kv.Key, kv.Value);
                             });
-                            await RunRules(msg.DeviceId, obj, MountType.Telemetry);
+                            await RunRules(msg.DeviceId, obj, MountType.Attribute);
                         }
                     }
                 }
@@ -134,7 +135,7 @@ namespace IoTSharp.Handlers
             }
         } 
         [CapSubscribe("iotsharp.services.datastream.devicestatus")]
-        public void DeviceStatus(DeviceStatus status)
+        public void DeviceStatus( RawMsg status)
         {
             try
             {
@@ -145,19 +146,20 @@ namespace IoTSharp.Handlers
                         var dev = _dbContext.Device.FirstOrDefault(d=>d.Id==status.DeviceId);
                         if (dev != null)
                         {
-                            if (dev.Online == true && status.Status == false)
+                            if (dev.Online == true && status.DeviceStatus != Data.DeviceStatus.Good)
                             {
                                 dev.Online = false;
                                 dev.LastActive = DateTime.Now;
-                                Task.Run(() => RunRules(dev.Id, status, MountType.Online));
-                                //真正掉线
+                                Task.Run(() => RunRules(dev.Id, status, MountType.Offline));
+                                //真正离线
                             }
-                            else if (dev.Online == false && status.Status == true)
+                            else if (dev.Online == false && status.DeviceStatus== Data.DeviceStatus.Good)
                             {
                                 dev.Online = true;
                                 dev.LastActive = DateTime.Now;
-                                Task.Run(() => RunRules(dev.Id, status, MountType.Offline));
-                                //真正离线
+                                Task.Run(() => RunRules(dev.Id, status, MountType.Online));
+                                //真正掉线
+                       
                             }
                             _dbContext.SaveChanges();
                         }
@@ -170,7 +172,7 @@ namespace IoTSharp.Handlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"处理{status.DeviceId} 的状态{status.Status} 时遇到异常:{ex.Message}");
+                _logger.LogError(ex, $"处理{status.DeviceId} 的状态{status.DeviceStatus} 时遇到异常:{ex.Message}");
             
             }
         }
@@ -182,12 +184,16 @@ namespace IoTSharp.Handlers
         public async void StoreTelemetryData(RawMsg msg)
         {
             var result = await _storage.StoreTelemetryAsync(msg);
-            ExpandoObject exps = new ExpandoObject();
-            result.telemetries.ForEach(td =>
+            var data = from t in result.telemetries
+                     select new TelemetryDataDto() { DateTime = t.DateTime, DataType=t.Type, KeyName = t.KeyName, Value = t.ToObject() };
+            var array = data.ToList();
+            ExpandoObject exps = new();
+            array.ForEach(td =>
             {
-                exps.TryAdd(td.KeyName, td.ToObject());
+                exps.TryAdd(td.KeyName, td.Value);
             });
             await RunRules(msg.DeviceId, (dynamic)exps, MountType.Telemetry);
+            await RunRules(msg.DeviceId, array, MountType.TelemetryArray);
         }
 
         private async Task RunRules(Guid devid, object obj, MountType mountType)

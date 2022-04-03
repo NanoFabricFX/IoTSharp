@@ -99,15 +99,10 @@ namespace IoTSharp.Controllers
         {
             try
             {
-
-
                 var result = await _signInManager.PasswordSignInAsync(model.UserName, model.Password, false, false);
                 if (result.Succeeded)
                 {
-
-
                     var SignInResult = await CreateToken(model.UserName);
-
                     return new ApiResult<LoginResult>(ApiCode.Success, "Ok", new LoginResult()
                     {
                         Code = ApiCode.Success,
@@ -127,7 +122,6 @@ namespace IoTSharp.Controllers
                 }
                 else
                 {
-
                     return new ApiResult<LoginResult>(ApiCode.LoginError, "Unauthorized", null);
                 }
             }
@@ -204,28 +198,9 @@ namespace IoTSharp.Controllers
         {
            
             var profile = this.GetUserProfile();
-
-
-            //    var jwtTokenHandler = new JwtSecurityTokenHandler();
-
-
             try
             {
-
-                //var tokenInVerification = jwtTokenHandler.ValidateToken(model.Token, _tokenValidationParams, out var validatedToken);
-
-                //if (validatedToken is JwtSecurityToken jwtSecurityToken)
-                //{
-                //    var result = jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase);
-
-                //    if (result == false)
-                //    {
-                //        return new ApiResult<LoginResult>(ApiCode.InValidData, "Invalid payload", null);
-                //    }
-                //}
-
                 var storedRefreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == model.RefreshToken);
-
                 if (storedRefreshToken == null)
                 {
                     return new ApiResult<LoginResult>(ApiCode.InValidData, "RefreshToken does not exist", null);

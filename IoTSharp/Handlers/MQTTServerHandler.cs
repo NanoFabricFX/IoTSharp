@@ -83,7 +83,7 @@ namespace IoTSharp.Handlers
                     string topic = e.ApplicationMessage.Topic;
                     var tpary = topic.Split('/', StringSplitOptions.RemoveEmptyEntries);
                     var _dev = await FoundDevice(e.SenderClientId);
-                 
+               
                     if (tpary.Length >= 3 && tpary[0] == "devices" && _dev != null)
                     {
                         var device = _dev.JudgeOrCreateNewDevice( tpary[1], _scopeFactor, _logger);
@@ -135,12 +135,13 @@ namespace IoTSharp.Handlers
                                 }
                                 else
                                 {
-                                    _queue.PublishAttributeData(new RawMsg() { DeviceId = device.Id, MsgBody = keyValues, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.AttributeData });
+                                    _queue.PublishAttributeData(new RawMsg() { DeviceId =  device.Id, MsgBody = keyValues, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.AttributeData });
                                 }
                             }
                             else if (tpary[2] == "status" )
                             {
-                                ResetDeviceStatus(device, tpary[3] == "online");
+                                var ds = Enum.TryParse(tpary[3], true, out DeviceStatus status) ? status : (tpary[3] == "online" ? DeviceStatus.Good : DeviceStatus.Bad);
+                                ResetDeviceStatus(device, ds);
                                 statushavevalue = true;
                             }
                             else if (tpary[2] == "rpc")
@@ -164,6 +165,31 @@ namespace IoTSharp.Handlers
                             _logger.LogInformation($"{e.SenderClientId}的数据{e.ApplicationMessage.Topic}未能匹配到设备");
                         }
                     }
+                    else if (tpary.Length >= 3 && tpary[0] == "gateway" && _dev != null  )
+                    {
+                        var lst = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<Playload>>>(e.ApplicationMessage.ConvertPayloadToString());
+                        _logger.LogInformation($"{e.SenderClientId}的数据{e.ApplicationMessage.Topic}是网关数据， 解析到{lst?.Count}个设备");
+                        bool istelemetry =tpary[2] == "telemetry";
+                        lst?.Keys.ToList().ForEach(dev =>
+                        {
+
+                            var plst = lst[dev];
+                            var device = _dev.JudgeOrCreateNewDevice(dev, _scopeFactor, _logger);
+                            _logger.LogInformation($"{e.SenderClientId}的网关数据正在处理设备{dev}， 设备ID为{device?.Id}");
+                            plst.ForEach(p =>
+                            {
+                                if (istelemetry)
+                                {
+                                    _queue.PublishTelemetryData(new RawMsg() { DeviceId = device.Id, DeviceStatus = p.DeviceStatus, ts = new DateTime( p.Ticks), MsgBody = p.Values, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.TelemetryData });
+                                }
+                                else
+                                {
+                                    _queue.PublishAttributeData(new RawMsg() { DeviceId = device.Id, DeviceStatus = p.DeviceStatus, ts = new DateTime(p.Ticks), MsgBody = p.Values, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.TelemetryData });
+                                }
+                            });
+                            _logger.LogInformation($"{e.SenderClientId}的网关数据处理完成，设备{dev}ID为{device?.Id}共计{plst.Count}条");
+                        });
+                    }    
                     else
                     {
                         //tpary.Length >= 3 && tpary[0] == "devices" && _dev != null
@@ -179,13 +205,13 @@ namespace IoTSharp.Handlers
             }
         }
 
-        private void ResetDeviceStatus(Device device,bool status=true)
+        private void ResetDeviceStatus(Device device, DeviceStatus status = DeviceStatus.Good)
         {
             _logger.LogInformation($"重置状态{device.Id} {device.Name}");
             if (device.DeviceType == DeviceType.Device && device.Owner != null && device.Owner?.Id != null && device.Owner?.Id !=Guid.Empty)//虚拟设备上线
             {
                 _queue.PublishDeviceStatus(device.Id, status);
-                _queue.PublishDeviceStatus(device.Owner.Id, status);
+                _queue.PublishDeviceStatus(device.Owner.Id, status!= DeviceStatus.Good ? DeviceStatus.PartGood: status);
                 _logger.LogInformation($"重置网关状态{device.Owner.Id} {device.Owner.Name}");
             }
             else
@@ -278,13 +304,13 @@ namespace IoTSharp.Handlers
                 {
                     var qf = from at in _dbContext.AttributeLatest where at.Type == DataType.XML && at.KeyName == tpary[5] select at;
                     await qf.LoadAsync();
-                    await _serverEx.PublishAsync(senderClientId,  $"/devices/me/attributes/response/{tpary[5]}", qf.FirstOrDefault()?.Value_XML);
+                    await _serverEx.PublishAsync(senderClientId,  $"devices/me/attributes/response/{tpary[5]}", qf.FirstOrDefault()?.Value_XML);
                 }
                 else if (tpary.Length > 5 && tpary[4] == "binary")
                 {
                     var qf = from at in _dbContext.AttributeLatest where at.Type == DataType.Binary && at.KeyName == tpary[5] select at;
                     await qf.LoadAsync();
-                    await _serverEx.PublishAsync(senderClientId, $"/devices/me/attributes/response/{tpary[5]}", qf.FirstOrDefault()?.Value_Binary );
+                    await _serverEx.PublishAsync(senderClientId, $"devices/me/attributes/response/{tpary[5]}", qf.FirstOrDefault()?.Value_Binary );
                 }
                 else
                 {
@@ -347,6 +373,8 @@ namespace IoTSharp.Handlers
                                 break;
                         }
                     }
+
+                    await _serverEx.PublishAsync(senderClientId, $"devices/me/attributes/response/{tpary[4]}", reps);
                 }
             }
 
@@ -395,7 +423,7 @@ namespace IoTSharp.Handlers
                
              
             }
-            if (e.TopicFilter.Topic.ToLower().StartsWith("/devices/telemetry"))
+            if (e.TopicFilter.Topic.ToLower().StartsWith("devices/telemetry"))
             {
               
 

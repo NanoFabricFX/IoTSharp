@@ -29,20 +29,20 @@
 		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<IsPackable>true</IsPackable>
-		<PackageLicenseExpression></PackageLicenseExpression>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
 		<Copyright>Copyright 2018-2022  Yanhong Ma</Copyright>
 		<AssemblyVersion>2.0.1.0</AssemblyVersion>
 		<FileVersion>2.0.1.0</FileVersion>
-		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 		<PackageIcon>96x96.png</PackageIcon>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<PropertyGroup>
 		<GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
 		<DocumentationFile>IoTSharp.xml</DocumentationFile>
 		<NoWarn>1701;1702;1591</NoWarn>
-		<OutputPath></OutputPath>
+		<DocumentationFile>IoTSharp.xml</DocumentationFile>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 	</PropertyGroup>
 	<ItemGroup>
 
@@ -50,7 +50,7 @@
 		<PackageReference Include="AspNetCore.HealthChecks.MongoDb" Version="6.0.2" />
 		<PackageReference Include="AspNetCore.HealthChecks.Network" Version="6.0.1" />
 		<PackageReference Include="AspNetCore.HealthChecks.Rabbitmq" Version="6.0.2" />
-		<PackageReference Include="AspNetCore.HealthChecks.Redis" Version="6.0.2" />
+		<PackageReference Include="AspNetCore.HealthChecks.Redis" Version="6.0.3" />
 		<PackageReference Include="AspNetCore.HealthChecks.System" Version="6.0.4" />
 		<PackageReference Include="AspNetCore.HealthChecks.UI" Version="6.0.4" />
 		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="6.0.4" />
@@ -64,22 +64,22 @@
 		<PackageReference Include="DotNetCore.CAP.MongoDB" Version="6.0.1" />
 		<PackageReference Include="DotNetCore.CAP.RabbitMQ" Version="6.0.1" />
 		<PackageReference Include="DotNetCore.CAP.PostgreSql" Version="6.0.1" />
-		<PackageReference Include="EasyCaching.Core" Version="1.5.0" />
-		<PackageReference Include="EasyCaching.InMemory" Version="1.5.0" />
-		<PackageReference Include="EasyCaching.LiteDB" Version="1.5.0" />
-		<PackageReference Include="EasyCaching.Redis" Version="1.5.0" />
+		<PackageReference Include="EasyCaching.Core" Version="1.5.1" />
+		<PackageReference Include="EasyCaching.InMemory" Version="1.5.1" />
+		<PackageReference Include="EasyCaching.LiteDB" Version="1.5.1" />
+		<PackageReference Include="EasyCaching.Redis" Version="1.5.1" />
 		<PackageReference Include="hyjiacan.pinyin4net" Version="4.1.1" />
-		<PackageReference Include="InfluxDB.Client" Version="3.3.0" />
+		<PackageReference Include="InfluxDB.Client" Version="4.0.0" />
 		<PackageReference Include="IoTSharp.CoAP.NET" Version="2.0.8" />
-		<PackageReference Include="IoTSharp.X509Extensions" Version="1.4.27" />
+		<PackageReference Include="IoTSharp.X509Extensions" Version="2.0.36" />
 		<PackageReference Include="Jdenticon-net" Version="3.1.2" />
 		<PackageReference Include="Jdenticon.AspNetCore" Version="3.1.2" />
 		<PackageReference Include="kimbus" Version="2.0.1" />
 		<PackageReference Include="LiteDB" Version="5.0.11" />
 		<PackageReference Include="MaiKeBing.CAP.ZeroMQ" Version="1.0.35" />
 		<PackageReference Include="MaiKeBing.CAP.LiteDB" Version="1.0.35" />
-		<PackageReference Include="Maikebing.Data.Taos" Version="2.0.357" />
-		<PackageReference Include="Maikebing.HealthChecks.Taos" Version="2.0.357" />
+		<PackageReference Include="IoTSharp.Data.Taos" Version="2.0.450" />
+		<PackageReference Include="IoTSharp.HealthChecks.Taos" Version="2.0.450" />
 		<PackageReference Include="MaiKeBing.HostedService.ZeroMQ" Version="1.0.35" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.1.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="4.1.0" />
@@ -88,7 +88,7 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.1.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.1.0" />
 		<PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.2" />
 		<PackageReference Include="MQTTnet" Version="4.0.0-preview5" />
 		<PackageReference Include="MQTTnet.AspNetCore" Version="4.0.0-preview5" />
@@ -100,9 +100,8 @@
 		<PackageReference Include="NSwag.AspNetCore" Version="13.15.10" />
 		<PackageReference Include="PinusDB" Version="1.0.10" />
 		<PackageReference Include="PinusDB.HealthChecks" Version="1.0.10" />
-		<PackageReference Include="ProxyKit" Version="2.3.4" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
-		<PackageReference Include="RestSharp" Version="106.15.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.4.0" />
+		<PackageReference Include="RestSharp" Version="107.3.0" />
 		<PackageReference Include="Rin" Version="2.6.0" />
 		<PackageReference Include="Rin.Mvc" Version="2.6.0" />
 		<PackageReference Include="RulesEngine" Version="3.5.0" />
@@ -113,27 +112,28 @@
 		<PackageReference Include="SilkierQuartz" Version="5.0.309" />
 		<PackageReference Include="SilkierQuartz.Plugins.RecentHistory" Version="5.0.309" />
 		<PackageReference Include="SkiaSharp" Version="2.80.3" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.80.3" />
 		<PackageReference Include="System.CodeDom" Version="6.0.0" />
 		<PackageReference Include="System.Collections" Version="4.3.0" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.16.0" />
 		<PackageReference Include="System.ServiceModel.Primitives" Version="4.9.0" />
 		<PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.2" />
-		<PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="6.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.2" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="6.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.0.0-preview5" />
-		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.2" />
-		<PackageReference Include="Microsoft.AspNetCore.ApiAuthorization.IdentityServer" Version="6.0.2" />
-		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.2" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.2" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.2" />
+		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="6.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.ApiAuthorization.IdentityServer" Version="6.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.3" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.3" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.1.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.2">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.3">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -143,11 +143,19 @@
 
 		<Compile Remove="Migrations\**" />
 
+		<Compile Remove="Resources\images\**" />
+
 		<Content Remove="Migrations\**" />
+
+		<Content Remove="Resources\images\**" />
 
 		<EmbeddedResource Remove="Migrations\**" />
 
+		<EmbeddedResource Remove="Resources\images\**" />
+
 		<None Remove="Migrations\**" />
+
+		<None Remove="Resources\images\**" />
 		<Content Remove="wwwroot\lib\jquery-validation-unobtrusive\LICENSE.txt" />
 		<Content Remove="wwwroot\lib\jquery\LICENSE.txt" />
 		<None Remove=".gitignore" />
@@ -163,10 +171,6 @@
 		<None Remove="TelemetryStorage.db" />
 		<_WebToolingArtifacts Remove="Properties\PublishProfiles\registry.hub.docker.com_iotsharp.pubxml" />
 		<None Include="..\docs\images\96x96.png">
-			<Pack>True</Pack>
-			<PackagePath></PackagePath>
-		</None>
-		<None Include="..\LICENSE.txt">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
@@ -194,8 +198,8 @@
 	<Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
 		<!-- As part of publishing, ensure the JS resources are freshly built in production mode -->
 		<Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
-		<Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --prod --aot" />
-		<Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --prod --aot" Condition=" '$(BuildServerSideRenderer)' == 'true' " />
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --prod " />
+		<Exec WorkingDirectory="$(SpaRoot)" Command="npm run build:ssr -- --prod" Condition=" '$(BuildServerSideRenderer)' == 'true' " />
 
 		<!-- Include the newly-built files in the publish output -->
 		<ItemGroup>
@@ -211,7 +215,7 @@
 
 	<ItemGroup>
 	  <Content Include="IoTSharp.xml">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
 	<ItemGroup>
@@ -227,6 +231,19 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="ClientApp\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="Properties\Resources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Update="Properties\Resources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	</ItemGroup>
 	<ProjectExtensions>
 		<VisualStudio>

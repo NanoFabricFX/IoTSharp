@@ -96,6 +96,10 @@ namespace IoTSharp.Data
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<Alarm> Alarms { get; set; }
+        public DbSet<Asset> Assets { get; set; }
+        public DbSet<AssetRelation> AssetRelations { get; set; }
+
     }
     
 }

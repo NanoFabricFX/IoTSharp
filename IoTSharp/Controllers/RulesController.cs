@@ -184,6 +184,10 @@ namespace IoTSharp.Controllers
             var rule = await _context.FlowRules.SingleOrDefaultAsync(c => c.RuleId == flowRule.RuleId && c.Tenant.Id == profile.Tenant);
             if (rule != null)
             {
+
+
+                var _customer = await _context.Customer.SingleOrDefaultAsync(c => c.Id == profile.Comstomer);
+                var _tenant = await _context.Tenant.SingleOrDefaultAsync(c => c.Id == profile.Tenant);
                 var newrule = new FlowRule();
                 newrule.DefinitionsXml = rule.DefinitionsXml;
                 newrule.Describes = flowRule.Describes;
@@ -193,11 +197,14 @@ namespace IoTSharp.Controllers
                 newrule.ExecutableCode = rule.ExecutableCode;
                 newrule.RuleDesc = flowRule.RuleDesc;
                 newrule.RuleStatus = 1;
-                newrule.MountType = flowRule.MountType;
+                newrule.MountType = rule.MountType;
                 newrule.ParentRuleId = rule.RuleId;
                 newrule.CreateId = new Guid();
                 newrule.SubVersion = rule.SubVersion + 0.01;
-                newrule.Runner = rule.Runner;
+
+                newrule.Customer = _customer;
+                newrule.Tenant = _tenant;
+                newrule.Creator = profile.Id.ToString();
                 _context.FlowRules.Add(newrule);
                 await _context.SaveChangesAsync();
 
@@ -222,7 +229,8 @@ namespace IoTSharp.Controllers
                     Outgoing = c.Outgoing,
                     SourceId = c.SourceId,
                     TargetId = c.TargetId,
-
+                    Customer = _customer,
+                    Tenant = _tenant,
                     bpmnid = c.bpmnid,
                     CreateId = newrule.CreateId
                 }).ToList();
@@ -329,7 +337,7 @@ namespace IoTSharp.Controllers
             var activity = JsonConvert.DeserializeObject<Activity>(m.Biz);
             var CreatorId = Guid.NewGuid();
             var CreateDate = DateTime.Now;
-            var rule = _context.FlowRules.Include(c=>c.Customer).Include(c=>c.Tenant).FirstOrDefault(c => c.RuleId == activity.RuleId);
+            var rule = _context.FlowRules.Include(c => c.Customer).Include(c => c.Tenant).FirstOrDefault(c => c.RuleId == activity.RuleId);
             rule.DefinitionsXml = m.Xml;
             rule.Creator = profile.Id.ToString();
             rule.CreateId = CreatorId;
@@ -356,7 +364,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-      
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -376,7 +384,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-               
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -396,7 +404,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-           
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -420,7 +428,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-         
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -444,7 +452,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-           
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -464,7 +472,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-      
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -484,7 +492,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-            
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -504,7 +512,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-            
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -524,7 +532,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-           
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -562,7 +570,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-         
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -582,7 +590,7 @@ namespace IoTSharp.Controllers
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-             
+
                 _context.Flows.AddRange(fw);
                 _context.SaveChanges();
             }
@@ -598,11 +606,11 @@ namespace IoTSharp.Controllers
                     FlowStatus = 1,
                     CreateId = CreatorId,
                     Createor = profile.Id,
-                    CreateDate = CreateDate  ,    
+                    CreateDate = CreateDate,
                     Customer = rule.Customer,
                     Tenant = rule.Tenant
                 });
-             
+
                 _context.Flows.AddRange(fws);
                 _context.SaveChanges();
             }
@@ -1104,13 +1112,16 @@ namespace IoTSharp.Controllers
             var __ruleid = obj.Value<string>();
             var ruleid = Guid.Parse(__ruleid);
 
-            var d = formdata.Value<JToken>().ToObject(typeof(ExpandoObject));
+            var d = formdata.Value<JToken>().ToObject<object>();
+
+
+
             var testabizId = Guid.NewGuid().ToString(); //根据业务保存起来，用来查询执行事件和步骤
             var result = await _flowRuleProcessor.RunFlowRules(ruleid, d, Guid.Empty, EventType.TestPurpose, testabizId);
 
 
-        
-            var flowRule=_context.FlowRules.SingleOrDefault(c => c.RuleId == ruleid);
+
+            var flowRule = _context.FlowRules.SingleOrDefault(c => c.RuleId == ruleid);
 
             var flows = _context.Flows.Where(c => c.FlowRule == flowRule).ToList();
 
@@ -1128,8 +1139,9 @@ namespace IoTSharp.Controllers
                     {
                         AddDate = c.AddDate,
                         BizId = c.BizId,
-                        Data = c.Data, BaseEvent = operevent,
-                        Flow = flows.SingleOrDefault(x=>x.FlowId==c.Flow.FlowId
+                        Data = c.Data,
+                        BaseEvent = operevent,
+                        Flow = flows.SingleOrDefault(x => x.FlowId == c.Flow.FlowId
                         ),
                         FlowRule = flowRule,
                         NodeStatus = c.NodeStatus,
@@ -1226,13 +1238,50 @@ namespace IoTSharp.Controllers
         public ApiResult<dynamic> GetFlowOperations(Guid eventId)
         {
             var profile = this.GetUserProfile();
-            return new ApiResult<dynamic>(ApiCode.Success, "OK", _context.FlowOperations.Where(c => c.BaseEvent.EventId == eventId).ToList().OrderBy(c => c.Step).
-              ToList()
+            var _event = _context.BaseEvents.Include(c=>c.FlowRule).SingleOrDefault(c => c.EventId == eventId);
+            var _operations = _context.FlowOperations.Include(c=>c.Flow).Where(c => c.BaseEvent == _event).ToList();
+
+
+
+            var flows = _context.Flows.Where(c => c.FlowRule.RuleId == _event.FlowRule.RuleId);
+            var sf = flows.Where(c => c.FlowType == "bpmn:SequenceFlow").ToArray();
+            var links = new List<dynamic>();
+            var nodes = new List<string>();
+            foreach (var item in sf)
+            {
+                var target = _operations.FirstOrDefault(c => c.Flow.bpmnid == item.TargetId);
+                var source = _operations.FirstOrDefault(c => c.Flow.bpmnid == item.SourceId);
+                if (target != null && source != null)
+                {
+               
+                    links.Add(new {source= source.Flow.Flowname?? source.bpmnid, target=target.Flow.Flowname ??  target.bpmnid, value= (target.AddDate - source.AddDate).Value.TotalMilliseconds });
+                    var _sourcename = source.Flow.Flowname ?? source.bpmnid;
+                    var _targetname = target.Flow.Flowname ?? target.bpmnid;
+                    if (nodes.All(c => c != _sourcename))
+                    {
+                        nodes.Add(_sourcename);
+                    }
+                    if (nodes.All(c => c != _targetname))
+                    {
+                        nodes.Add(_targetname);
+                    }
+                }
+            }
+            var steps = _operations.OrderBy(c => c.Step).
+                ToList()
                 .GroupBy(c => c.Step).Select(c => new
                 {
                     Step = c.Key,
                     Nodes = c
-                }).ToList());
+                }).ToList();
+            return new ApiResult<dynamic>(ApiCode.Success, "OK", new
+            {
+                steps,
+                charts=new
+                {
+                    sankey=new { links, nodes= nodes.Select(c=>new { name=c}).ToList() }
+                }
+            });
         }
 
         [HttpGet("[action]")]

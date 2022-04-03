@@ -1,4 +1,5 @@
 ﻿using IoTSharp.Interpreter;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -37,7 +38,7 @@ namespace IoTSharp.Test
             _lua_engine = new  LuaScriptEngine (lgf.CreateLogger<LuaScriptEngine>(), Options.Create(new Interpreter.EngineSetting() { Timeout = 4 }));
             _c_engine = new CScriptEngine(lgf.CreateLogger<CScriptEngine>(), Options.Create(new Interpreter.EngineSetting() { Timeout = 4 }));
             _sql_engine=new SQLEngine(lgf.CreateLogger<SQLEngine>(), Options.Create(new Interpreter.EngineSetting() { Timeout = 4 }));
-            _csharp_engine = new  CSharpScriptEngine   (lgf.CreateLogger<CSharpScriptEngine>(), Options.Create(new Interpreter.EngineSetting() { Timeout = 4 }));
+            _csharp_engine = new  CSharpScriptEngine   (lgf.CreateLogger<CSharpScriptEngine>(), Options.Create(new Interpreter.EngineSetting() { Timeout = 4 }), new MemoryCache(new MemoryCacheOptions()));
         }
         [TestMethod]
         public void TestJavaScript()
@@ -73,31 +74,9 @@ output= {'fever': fever, 'fat': fat}
             var outpuobj = System.Text.Json.JsonSerializer.Deserialize(output, t.GetType());
             Assert.AreEqual(outpuobj, t);
         }
+     
         [TestMethod]
         public void TestLua()
-        {
-            var intput = System.Text.Json.JsonSerializer.Serialize(new { temperature = 39, height = 192, weight = 121 });
-
-            string output = _lua_engine.Do(@"
-fff = {fever = false, fat = false}
-
-function fff:new()
- local  o =  {}
-  setmetatable(o, self)
-  self.__index = self
-  self.fever = true
-  self.fat =  true
-  return o
-end
-
-return    fff:new()
-", intput);
-            var t = new { fever = true, fat = true };
-            var outpuobj = System.Text.Json.JsonSerializer.Deserialize(output, t.GetType());
-            Assert.AreEqual(outpuobj, t);
-        }
-        [TestMethod]
-        public void TestLua1()
         {
             var intput = System.Text.Json.JsonSerializer.Serialize(new { temperature = 39, height = 192, weight = 121 });
             string output = _lua_engine.Do( Properties.Resources.luatest, intput);
@@ -105,14 +84,7 @@ return    fff:new()
             var outpuobj = System.Text.Json.JsonSerializer.Deserialize(output, t.GetType());
             Assert.AreEqual(outpuobj, t);
         }
-        [TestMethod]
-        public void TestC()
-        {
-            var input = "38";
-            string output = _c_engine.Do("atoi(input)>38?1:0;", input);
-            
-            Assert.AreEqual(int.Parse(input) > 38 ? 1 : 0, output);
-        }
+    
         [TestMethod]
         public void TestSQL()
         {
@@ -127,8 +99,9 @@ return    fff:new()
         public void TestCSharpScript()
         {
             var intput = System.Text.Json.JsonSerializer.Serialize(new { temperature = 39, height = 192, weight = 121 });
-
-            string output = _csharp_engine.Do(@"
+            for (int i = 0; i < 1000; i++)
+            {
+                string output = _csharp_engine.Do(@"
 var _m = (input.height / 100);
 var output = new {
     fever= input.temperature > 38 ? true : false,
@@ -136,10 +109,11 @@ var output = new {
 };
 return output;
 ", intput);
-
-            var t = new { fever = true, fat = true };
-            var outpuobj = System.Text.Json.JsonSerializer.Deserialize(output, t.GetType());
-            Assert.AreEqual(outpuobj, t);
+                var t = new { fever = true, fat = true };
+                var outpuobj = System.Text.Json.JsonSerializer.Deserialize(output, t.GetType());
+                Assert.AreEqual(outpuobj, t);
+            }
+          
         }
     }
 }

@@ -10,7 +10,6 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -180,7 +179,7 @@ namespace IoTSharp.FlowRuleEngine
                     return;
                 }
 
-                var flow = _allFlows.FirstOrDefault(c => c.bpmnid == peroperation.Flow.TargetId);
+                var flow = _allFlows.FirstOrDefault(c => c.bpmnid == peroperation.Flow.TargetId && c.FlowType != "label");
                 switch (flow.FlowType)
                 {
                     case "bpmn:SequenceFlow":
@@ -288,7 +287,7 @@ namespace IoTSharp.FlowRuleEngine
                                                 try
                                                 {
                                                     string result = pse.Do(scriptsrc, taskoperation.Data);
-                                                obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                                obj = JsonConvert.DeserializeObject<object>(result);
                                             }
                                             catch (Exception ex)
                                             {
@@ -307,7 +306,7 @@ namespace IoTSharp.FlowRuleEngine
                                             {
                                                 try{
                                                 string result = pse.Do(scriptsrc, taskoperation.Data);
-                                                obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                                obj = JsonConvert.DeserializeObject<object>(result);
                                             }
                                             catch (Exception ex)
                                             {
@@ -329,7 +328,7 @@ namespace IoTSharp.FlowRuleEngine
                                                 try
                                                 {
                                                     string result = lua.Do(scriptsrc, taskoperation.Data);
-                                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                                    obj = JsonConvert.DeserializeObject<object>(result);
                                                 }
                                                 catch (Exception ex)
                                                 {
@@ -351,7 +350,7 @@ namespace IoTSharp.FlowRuleEngine
                                                 try
                                                 {
                                                     string result = js.Do(scriptsrc, taskoperation.Data);
-                                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                                    obj = JsonConvert.DeserializeObject<object>(result);
 
                                                 }
                                                 catch (Exception ex)
@@ -375,7 +374,7 @@ namespace IoTSharp.FlowRuleEngine
                                                 {
 
                                                     string result = js.Do(scriptsrc, taskoperation.Data);
-                                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                                    obj = JsonConvert.DeserializeObject<object>(result);
                                                 }
                                                 catch (Exception ex)
                                                 {
@@ -456,25 +455,8 @@ namespace IoTSharp.FlowRuleEngine
 
                     case "bpmn:EndEvent":
 
-                        var end = _allflowoperation.FirstOrDefault(c => c.bpmnid == flow.bpmnid);
-
-                        if (end != null)
-                        {
-                            end.BuildFlowOperation(peroperation, flow);
-                            end.bpmnid = flow.bpmnid;
-                            end.AddDate = DateTime.Now;
-                            end.FlowRule = peroperation.BaseEvent.FlowRule;
-                            end.Flow = flow;
-
-                            end.Data = JsonConvert.SerializeObject(data);
-                            end.NodeStatus = 1;
-                            end.OperationDesc = "处理完成";
-                            end.Step = 1 + _allflowoperation.Max(c => c.Step);
-                            end.BaseEvent = peroperation.BaseEvent;
-                        }
-                        else
-                        {
-                            end = new FlowOperation();
+                    
+                           var    end = new FlowOperation();
                             end.BuildFlowOperation(peroperation, flow);
                             end.OperationId = Guid.NewGuid();
                             end.bpmnid = flow.bpmnid;
@@ -487,7 +469,7 @@ namespace IoTSharp.FlowRuleEngine
                             end.Step = 1 + _allflowoperation.Max(c => c.Step);
                             end.BaseEvent = peroperation.BaseEvent;
                             _allflowoperation.Add(end);
-                        }
+                      
                         _logger.Log(LogLevel.Warning, "规则链执行完成");
 
                         break;
@@ -523,41 +505,48 @@ namespace IoTSharp.FlowRuleEngine
 
         public async Task<List<Flow>> ProcessCondition(Guid flowId, dynamic data)
         {
+            var emptyflow = new List<Flow>();
             var flow = _allFlows.FirstOrDefault(c => c.FlowId == flowId);
-            var flows = _allFlows.Where(c => c.SourceId == flow.bpmnid).ToList();
-            var emptyflow = flows.Where(c => c.Conditionexpression == string.Empty).ToList() ?? new List<Flow>();
-            var tasks = new BaseRuleTask()
+            if (flow != null)
             {
-                Name = flow.Flowname,
-                Eventid = flow.bpmnid,
-                id = flow.bpmnid,
-                outgoing = new EditableList<BaseRuleFlow>()
-            };
-            foreach (var item in flows.Except(emptyflow))
-            {
-                var rule = new BaseRuleFlow();
-                rule.id = item.bpmnid;
-                rule.Name = item.bpmnid;
-                rule.Eventid = item.bpmnid;
-                rule.Expression = item.Conditionexpression;
-                tasks.outgoing.Add(rule);
-            }
-            if (tasks.outgoing.Count > 0)
-            {
-                SimpleFlowExcutor flowExcutor = new SimpleFlowExcutor();
-                var result = await flowExcutor.Excute(new FlowExcuteEntity()
+                var flows = _allFlows.Where(c => c.SourceId == flow?.bpmnid).ToList();
+                emptyflow = flows.Where(c => c.Conditionexpression == string.Empty).ToList() ?? new List<Flow>();
+                var tasks = new BaseRuleTask()
                 {
-                    Params = data,
-                    Task = tasks,
-                });
-                var next = result.Where(c => c.IsSuccess).ToList();
-                foreach (var item in next)
+                    Name = flow.Flowname,
+                    Eventid = flow.bpmnid,
+                    id = flow.bpmnid,
+                    outgoing = new EditableList<BaseRuleFlow>()
+                };
+                foreach (var item in flows.Except(emptyflow))
                 {
-                    var nextflow = flows.FirstOrDefault(a => a.bpmnid == item.Rule.SuccessEvent);
-                    emptyflow.Add(nextflow);
+                    var rule = new BaseRuleFlow();
+                    rule.id = item.bpmnid;
+                    rule.Name = item.bpmnid;
+                    rule.Eventid = item.bpmnid;
+                    rule.Expression = item.Conditionexpression;
+                    tasks.outgoing.Add(rule);
+                }
+                if (tasks.outgoing.Count > 0)
+                {
+                    SimpleFlowExcutor flowExcutor = new SimpleFlowExcutor();
+                    var result = await flowExcutor.Excute(new FlowExcuteEntity()
+                    {
+                        Params = data,
+                        Task = tasks,
+                    });
+                    var next = result.Where(c => c.IsSuccess).ToList();
+                    foreach (var item in next)
+                    {
+                        var nextflow = flows.FirstOrDefault(a => a.bpmnid == item.Rule.SuccessEvent);
+                        emptyflow.Add(nextflow);
+                    }
                 }
             }
-
+            else
+            {
+                _logger.LogWarning($"ProcessCondition flowId={flowId}");
+            }
             return emptyflow;
         }
 
@@ -606,12 +595,16 @@ namespace IoTSharp.FlowRuleEngine
                                             ExecutorConfig = flow.NodeProcessParams,
                                             DeviceId = Guid.Empty
                                         });
-
                                         obj = result.DynamicOutput;
                                     }
                                     catch (Exception ex)
                                     {
+                                        _logger.LogWarning($"执行{flow.NodeProcessClass}失败， {ex.Message}");
                                     }
+                                }
+                                else
+                                {
+                                    _logger.LogWarning($"{flow.NodeProcessClass},未找到类型 ");
                                 }
                             }
                             break;
@@ -621,7 +614,7 @@ namespace IoTSharp.FlowRuleEngine
                                 using (var pse = _sp.GetRequiredService<PythonScriptEngine>())
                                 {
                                     string result = pse.Do(scriptsrc, data);
-                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                    obj = JsonConvert.DeserializeObject<object>(result);
                                 }
                             }
                             break;
@@ -631,7 +624,7 @@ namespace IoTSharp.FlowRuleEngine
                                 using (var pse = _sp.GetRequiredService<SQLEngine>())
                                 {
                                     string result = pse.Do(scriptsrc, data);
-                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                    obj = JsonConvert.DeserializeObject<object>(result);
                                 }
                             }
 
@@ -642,7 +635,7 @@ namespace IoTSharp.FlowRuleEngine
                                 using (var lua = _sp.GetRequiredService<LuaScriptEngine>())
                                 {
                                     string result = lua.Do(scriptsrc, data);
-                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                    obj = JsonConvert.DeserializeObject<object>(result);
                                 }
                             }
                             break;
@@ -652,7 +645,7 @@ namespace IoTSharp.FlowRuleEngine
                                 using (var js = _sp.GetRequiredService<JavaScriptEngine>())
                                 {
                                     string result = js.Do(scriptsrc, data);
-                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                    obj = JsonConvert.DeserializeObject<object>(result);
                                 }
                             }
                             break;
@@ -662,7 +655,7 @@ namespace IoTSharp.FlowRuleEngine
                                 using (var js = _sp.GetRequiredService<CSharpScriptEngine>())
                                 {
                                     string result = js.Do(scriptsrc, data);
-                                    obj = JsonConvert.DeserializeObject<ExpandoObject>(result);
+                                    obj = JsonConvert.DeserializeObject<object>(result);
                                 }
                             }
                             break;

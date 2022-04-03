@@ -137,6 +137,13 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="M:IoTSharp.Controllers.AlarmController.Occurred(IoTSharp.Dtos.CreateAlarmDto)">
+             <summary>
+            
+             </summary>
+             <param name="dto"></param>
+             <returns></returns>
+        </member>
         <member name="T:IoTSharp.Controllers.AuthorizedKeysController">
             <summary>
             全局设备认证KEY管理
@@ -153,6 +160,26 @@
             根据ID获取KEY
             </summary>
             <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="T:IoTSharp.Controllers.CaptchaController">
+            <summary>
+            登录验证码
+            </summary>
+        </member>
+        <member name="M:IoTSharp.Controllers.CaptchaController.Index(System.String)">
+            <summary>
+            生成一个图形认证
+            </summary>
+            <param name="clientid"></param>
+            <returns></returns>
+        </member>
+        <member name="M:IoTSharp.Controllers.CaptchaController.Vertify(System.String,IoTSharp.Models.ModelCaptchaVertify)">
+            <summary>
+            校验图形认证
+            </summary>
+            <param name="clientid"></param>
+            <param name="m"></param>
             <returns></returns>
         </member>
         <member name="T:IoTSharp.Controllers.CustomersController">
@@ -200,6 +227,11 @@
             </summary>
             <param name="id"></param>
             <returns></returns>
+        </member>
+        <member name="T:IoTSharp.Controllers.DeviceModelController">
+            <summary>
+            设备模型
+            </summary>
         </member>
         <member name="T:IoTSharp.Controllers.DevicesController">
             <summary>
@@ -289,6 +321,21 @@
             <param name="end">For example: 2019-06-06 12:24</param>
             <returns></returns>
         </member>
+        <member name="M:IoTSharp.Controllers.DevicesController.GetTelemetryData(System.Guid,IoTSharp.Dtos.TelemetryDataQueryDto)">
+             <summary>
+             返回指定设备的的遥测数据， 按照keyname 和指定时间范围获取，如果keyname 为 all  , 则返回全部key 的数据
+             </summary>
+             <param name="deviceId">指定设备ID</param>
+             <param name="queryDto">查询条件例子:
+            {
+             "keys": "",
+             "begin": "2022-03-23T11:44:56.488Z",
+             "every": "1.03:14:56:166",
+             "aggregate": "Mean"
+             }
+             </param>
+             <returns></returns>
+        </member>
         <member name="M:IoTSharp.Controllers.DevicesController.GetDevice(System.Guid)">
             <summary>
             获取设备详情
@@ -353,6 +400,15 @@
             <param name="attributes">attributes</param>
             <returns></returns>
         </member>
+        <member name="M:IoTSharp.Controllers.DevicesController.Alarm(System.String,IoTSharp.Dtos.DeviceAlarmDto)">
+            <summary>
+            为网关的子设备或者普通设备上传告警信息
+            </summary>
+            <param name="access_token">token</param>
+            <param name="alarm">警告内容</param>
+            <returns></returns>
+            <remarks>如果是网关设备，当OriginatorName为网关的名称或者ID时，则我们认为他是网关本身的警告，否则我们认为是设备的警告</remarks>
+        </member>
         <member name="M:IoTSharp.Controllers.DevicesController.PushDataToMap(System.String,System.String)">
             <summary>
             上传原始Json或者xml 通过规则链进行解析。 
@@ -360,15 +416,16 @@
             <param name="access_token">Device 's access token </param>
             <param name="format"></param>
             <returns></returns>
+            <remarks>需要在body里面填充数据</remarks>
         </member>
         <member name="M:IoTSharp.Controllers.DevicesController.PushDataToRuleChains(System.String,System.String)">
             <summary>
             上传原始Json或者xml 通过规则链进行解析。 
             </summary>
             <param name="access_token">Device 's access token </param>
-            <param name="body">原始数据， Post 在Body里面。 </param>
             <param name="format">只支持json和 xml， XML会转换为 Json。</param>
             <returns></returns>
+            <remarks>需要在body里面填充数据</remarks>
         </member>
         <member name="M:IoTSharp.Controllers.DevicesController.AddAttribute(System.String,IoTSharp.Controllers.DeviceAttributeDto)">
             <summary>
@@ -382,6 +439,15 @@
             </summary>
             <param name="devid"></param>
             <param name="attributes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:IoTSharp.Controllers.DevicesController.RemoveAttribute(System.Guid,System.String,IoTSharp.Data.DataSide)">
+            <summary>
+            属性删除
+            </summary>
+            <param name="deviceId"></param>
+            <param name="keyName"></param>
+            <param name="dataSide"></param>
             <returns></returns>
         </member>
         <member name="M:IoTSharp.Controllers.DevicesController.GetSessionStatus">
@@ -577,6 +643,111 @@
             用户名密码
             </summary>
         </member>
+        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.OriginatorName">
+            <summary>
+            起因设备的名称或者GUID
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.AlarmType">
+            <summary>
+            警告类型
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.AlarmDetail">
+            <summary>
+            警告细节描述
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.Serverity">
+            <summary>
+            严重成都
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.CreateAlarmDto.OriginatorType">
+            <summary>
+            起因设备类型
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.AlarmType">
+            <summary>
+            警告类型
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.AlarmDetail">
+            <summary>
+            警告细节描述
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.AckDateTime">
+            <summary>
+            警告创建时间
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.ClearDateTime">
+            <summary>
+            手动清除时间
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.StartDateTime">
+            <summary>
+            警告持续的开始时间
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.EndDateTime">
+            <summary>
+            结束时间， 当警告自动或者手动确实得到处理的时间
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.AlarmStatus">
+            <summary>
+            告警状态
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.Serverity">
+            <summary>
+            严重成都
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.Propagate">
+            <summary>
+            传播
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.OriginatorId">
+            <summary>
+            起因对象的Id
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AlarmDto.OriginatorType">
+            <summary>
+            起因设备类型
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AssetRelationDto.Name">
+            <summary>
+            列名
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AssetRelationDto.Description">
+            <summary>
+            描述
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AssetRelationDto.DeviceId">
+            <summary>
+            设备Id
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AssetRelationDto.DataCatalog">
+            <summary>
+            数据类型， 是遥测， 还是属性
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.AssetRelationDto.KeyName">
+            <summary>
+            对应的键名称
+            </summary>
+        </member>
         <member name="P:IoTSharp.Dtos.DeviceDetailDto.Name">
             <summary>
             设备名称
@@ -665,6 +836,43 @@
         <member name="P:IoTSharp.Dtos.InstanceDto.Installed">
             <summary>
             是否被安装
+            </summary>
+        </member>
+        <member name="F:IoTSharp.Dtos.TimespanConverterNewtonsoft.TimeSpanFormatString">
+            <summary>
+            Format: Days.Hours:Minutes:Seconds:Milliseconds
+            </summary>
+        </member>
+        <member name="T:IoTSharp.Dtos.TelemetryDataQueryDto">
+            <summary>
+            查询历史遥测数据请求结构体
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.TelemetryDataQueryDto.keys">
+            <summary>
+            要获取的键值， 如果为空， 则为全部
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.TelemetryDataQueryDto.begin">
+            <summary>
+            开始时间
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.TelemetryDataQueryDto.end">
+            <summary>
+            截止时间， 默认为现在。 
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.TelemetryDataQueryDto.every">
+            <summary>
+            数据截面聚合间隔
+            </summary>
+            <example>1.03:14:56:166</example>
+            <remarks>d.hh:mm:ss:FFF</remarks>
+        </member>
+        <member name="P:IoTSharp.Dtos.TelemetryDataQueryDto.aggregate">
+            <summary>
+            数据截面计算方式， 
             </summary>
         </member>
         <member name="M:IoTSharp.IoTSharpExtension.JustFill``1(IoTSharp.Data.ApplicationDbContext,Microsoft.AspNetCore.Mvc.ControllerBase,``0)">
@@ -795,8 +1003,18 @@
         </member>
         <member name="P:IoTSharp.Properties.Resources.Culture">
             <summary>
-              重写当前线程的 CurrentUICulture 属性
-              重写当前线程的 CurrentUICulture 属性。
+              重写当前线程的 CurrentUICulture 属性，对
+              使用此强类型资源类的所有资源查找执行重写。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.buzzle_template_png">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.Logo">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
             </summary>
         </member>
         <member name="P:IoTSharp.Properties.Resources.ShowHelp">
@@ -804,10 +1022,67 @@
               查找类似 显示帮助 的本地化字符串。
             </summary>
         </member>
+        <member name="P:IoTSharp.Properties.Resources.slide1_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide2_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide3_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide4_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide5_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide6_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide7_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide8_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Properties.Resources.slide9_jpg">
+            <summary>
+              查找 System.Byte[] 类型的本地化资源。
+            </summary>
+        </member>
         <member name="P:IoTSharp.Properties.Resources.TheCertificateIsInstalled">
             <summary>
               查找类似 The certificate is installed 的本地化字符串。
             </summary>
+        </member>
+        <member name="M:IoTSharp.Storage.InfluxDBStorage.LoadTelemetryAsync(System.Guid,System.String,System.DateTime,System.DateTime,System.TimeSpan,IoTSharp.Data.Aggregate)">
+            <summary>
+            加载遥测数据
+            </summary>
+            <param name="deviceId">设备ID</param>
+            <param name="keys">如果为空则全部 ， 否则都好分隔</param>
+            <param name="begin">时间开始</param>
+            <param name="end">结束</param>
+            <param name="every">数据堆叠断面时间</param>
+            <param name="aggregate">聚合方式</param>
+            <returns></returns>
         </member>
         <member name="M:IoTSharp.Storage.PinusDBStorage.SqlToTDD(PinusDB.Data.PinusConnection,System.String,System.Guid)">
             <summary>
@@ -824,7 +1099,7 @@
             更多内容可以参考<seealso cref="!:https://github.com/Coldairarrow/EFCore.Sharding/issues/52"/>
             </summary>
         </member>
-        <member name="M:IoTSharp.Storage.TaosStorage.SqlToTDD(Maikebing.Data.Taos.TaosConnection,System.String,System.String,System.String,System.String)">
+        <member name="M:IoTSharp.Storage.TaosStorage.SqlToTDD(IoTSharp.Data.Taos.TaosConnection,System.String,System.String,System.String,System.String)">
             <summary>
             转换获取到的值
             </summary>
@@ -836,117 +1111,21 @@
             <returns></returns>
             <exception cref="!:https://github.com/taosdata/TDengine/issues/4269">务必注意此bug</exception>
         </member>
+        <member name="M:IoTSharp.Storage.TaosStorage.LoadTelemetryAsync(System.Guid,System.String,System.DateTime,System.DateTime,System.TimeSpan,IoTSharp.Data.Aggregate)">
+            <summary>
+            
+            </summary>
+            <param name="deviceId"></param>
+            <param name="keys"></param>
+            <param name="begin"></param>
+            <param name="end"></param>
+            <param name="every">未能支持</param>
+            <param name="aggregate">未能支持</param>
+            <returns></returns>
+        </member>
         <member name="F:IoTSharp.Storage.TimescaleDBStorage._scopeFactor">
             <summary>
             解决单例注入问题 jy 
-            </summary>
-        </member>
-        <member name="T:LiteQueue.LiteQueue`1">
-            <summary>
-            Uses LiteDB to provide a persisted, thread safe, (optionally) transactional, FIFO queue.
-            
-            Suitable for use on clients as a lightweight, portable alternative to MSMQ. Not recommended for use 
-            on large server side applications due to performance limitations of LiteDB.
-            </summary>
-        </member>
-        <member name="P:LiteQueue.LiteQueue`1.IsTransactional">
-            <summary>
-            Impacts operation of <see cref="M:LiteQueue.LiteQueue`1.Dequeue"/> method. Can only be set once in constructor.
-            </summary>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.#ctor(LiteDB.LiteDatabase,System.String,System.Boolean)">
-            <summary>
-            Creates a collection for you in the database
-            </summary>
-            <param name="db">The LiteDB database. You are responsible for its lifecycle (using/dispose)</param>
-            <param name="collectionName">Name of the collection to create</param>
-            <param name="transactional">Whether the queue should use transaction logic, default true</param>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.#ctor(LiteDB.ILiteCollection{LiteQueue.QueueEntry{`0}},System.Boolean)">
-            <summary>
-            Uses the provided database collection
-            </summary>
-            <param name="collection">A LiteDB collection.</param>
-            <param name="transactional">Whether the queue should use transaction logic, default true</param>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.#ctor(LiteDB.LiteDatabase,System.Boolean)">
-            <summary>
-            Creates a collection for you in the database, collection's name is  <typeparamref name="T"/>
-            </summary>
-            <param name="db">The LiteDB database. You are responsible for its lifecycle (using/dispose)</param>
-            <param name="transactional">Whether the queue should use transaction logic, default true</param>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Enqueue(`0)">
-            <summary>
-            Adds a single item to queue. See <see cref="M:LiteQueue.LiteQueue`1.Enqueue(System.Collections.Generic.IEnumerable{`0})"/> for adding a batch.
-            </summary>
-            <param name="item"></param>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Enqueue(System.Collections.Generic.IEnumerable{`0})">
-            <summary>
-            Adds a batch of items to the queue. See <see cref="M:LiteQueue.LiteQueue`1.Enqueue(`0)"/> for adding a single item.
-            </summary>
-            <param name="items"></param>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Dequeue">
-            <summary>
-            Transactional queues:
-                Marks item as checked out but does not remove from queue. You are expected to later call <see cref="M:LiteQueue.LiteQueue`1.Commit(LiteQueue.QueueEntry{`0})"/> or <see cref="M:LiteQueue.LiteQueue`1.Abort(LiteQueue.QueueEntry{`0})"/>
-            Non-transactional queues:
-                Removes item from queue with no need to call <see cref="M:LiteQueue.LiteQueue`1.Commit(LiteQueue.QueueEntry{`0})"/> or <see cref="M:LiteQueue.LiteQueue`1.Abort(LiteQueue.QueueEntry{`0})"/>
-            </summary>
-            <returns>An item if found or null</returns>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Dequeue(System.Int32)">
-            <summary>
-            Batch equivalent of <see cref="M:LiteQueue.LiteQueue`1.Dequeue"/>
-            </summary>
-            <param name="batchSize">The maximum number of items to dequeue</param>
-            <returns>The items found or an empty collection (never null)</returns>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.CurrentCheckouts">
-            <summary>
-            Obtains list of items currently checked out (but not yet commited or aborted) as a result of Dequeue calls on a transactional queue
-            </summary>
-            <exception cref="T:System.InvalidOperationException">Thrown when queue is not transactional</exception>
-            <returns>Items found or empty collection (never null)</returns>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.ResetOrphans">
-            <summary>
-            Aborts all currently checked out items. Equivalent of calling <see cref="M:LiteQueue.LiteQueue`1.CurrentCheckouts"/> followed by <see cref="M:LiteQueue.LiteQueue`1.Abort(System.Collections.Generic.IEnumerable{LiteQueue.QueueEntry{`0}})"/>
-            </summary>
-            <exception cref="T:System.InvalidOperationException">Thrown when queue is not transactional</exception>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Abort(LiteQueue.QueueEntry{`0})">
-            <summary>
-            Aborts a transaction on a single item. See <see cref="M:LiteQueue.LiteQueue`1.Abort(System.Collections.Generic.IEnumerable{LiteQueue.QueueEntry{`0}})"/> for batches.
-            </summary>
-            <param name="item">An item that was obtained from a <see cref="M:LiteQueue.LiteQueue`1.Dequeue"/> call</param>
-            <exception cref="T:System.InvalidOperationException">Thrown when queue is not transactional</exception>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Abort(System.Collections.Generic.IEnumerable{LiteQueue.QueueEntry{`0}})">
-            <summary>
-            Aborts a transation on a group of items. See <see cref="M:LiteQueue.LiteQueue`1.Abort(LiteQueue.QueueEntry{`0})"/> for a single item.
-            </summary>
-            <param name="items">Items that were obtained from a <see cref="M:LiteQueue.LiteQueue`1.Dequeue"/> call</param>
-            <exception cref="T:System.InvalidOperationException">Thrown when queue is not transactional</exception>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Commit(LiteQueue.QueueEntry{`0})">
-            <summary>
-            Commits a transaction on a single item. See <see cref="M:LiteQueue.LiteQueue`1.Commit(System.Collections.Generic.IEnumerable{LiteQueue.QueueEntry{`0}})"/> for batches.
-            </summary>
-            <param name="item">An item that was obtained from a <see cref="M:LiteQueue.LiteQueue`1.Dequeue"/> call</param>
-            <exception cref="T:System.InvalidOperationException">Thrown when queue is not transactional</exception>
-        </member>
-        <!-- Badly formed XML comment ignored for member "M:LiteQueue.LiteQueue`1.Commit(System.Collections.Generic.IEnumerable{LiteQueue.QueueEntry{`0}})" -->
-        <member name="M:LiteQueue.LiteQueue`1.Count">
-            <summary>
-            Number of items in queue, including those that have been checked out.
-            </summary>
-        </member>
-        <member name="M:LiteQueue.LiteQueue`1.Clear">
-            <summary>
-            Removes all items from queue, including any that have been checked out.
             </summary>
         </member>
     </members>

@@ -17,10 +17,125 @@ namespace IoTSharp.Data.SqlServer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.2")
+                .HasAnnotation("ProductVersion", "6.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+
+            modelBuilder.Entity("IoTSharp.Data.Alarm", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AckDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AlarmDetail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AlarmStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AlarmType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ClearDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EndDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("OriginatorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OriginatorType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Propagate")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Serverity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Alarms");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.Asset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssetType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.AssetRelation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DataCatalog")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("KeyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.ToTable("AssetRelations");
+                });
 
             modelBuilder.Entity("IoTSharp.Data.AuditLog", b =>
                 {
@@ -1840,6 +1955,43 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.HasDiscriminator().HasValue(4);
                 });
 
+            modelBuilder.Entity("IoTSharp.Data.Alarm", b =>
+                {
+                    b.HasOne("IoTSharp.Data.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId");
+
+                    b.HasOne("IoTSharp.Data.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.Asset", b =>
+                {
+                    b.HasOne("IoTSharp.Data.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId");
+
+                    b.HasOne("IoTSharp.Data.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.AssetRelation", b =>
+                {
+                    b.HasOne("IoTSharp.Data.Asset", null)
+                        .WithMany("OwnedAssets")
+                        .HasForeignKey("AssetId");
+                });
+
             modelBuilder.Entity("IoTSharp.Data.AuditLog", b =>
                 {
                     b.HasOne("IoTSharp.Data.Customer", "Customer")
@@ -2251,6 +2403,11 @@ namespace IoTSharp.Data.SqlServer.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("IoTSharp.Data.Asset", b =>
+                {
+                    b.Navigation("OwnedAssets");
                 });
 
             modelBuilder.Entity("IoTSharp.Data.AuthorizedKey", b =>
