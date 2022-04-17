@@ -18,9 +18,9 @@ namespace IoTSharp.Handlers
 {
     public interface IEventBusHandler
     {
-        public void StoreAttributeData(RawMsg msg);
+        public void StoreAttributeData(PlayloadData msg);
 
-        public void StoreTelemetryData(RawMsg msg);
+        public void StoreTelemetryData(PlayloadData msg);
     }
 
     public class EventBusHandler : IEventBusHandler, ICapSubscribe
@@ -43,9 +43,9 @@ namespace IoTSharp.Handlers
             _flowRuleProcessor = flowRuleProcessor;
             _caching = factory.GetCachingProvider("iotsharp");
         }
-        Dictionary<Guid, DateTime> _check_device_status = new();
+
         [CapSubscribe("iotsharp.services.datastream.attributedata")]
-        public async void StoreAttributeData(RawMsg msg)
+        public async void StoreAttributeData(PlayloadData msg)
         {
             try
             {
@@ -122,20 +122,30 @@ namespace IoTSharp.Handlers
       
         }
 
-        [CapSubscribe("iotsharp.services.platform.addnewdevice")]
-        public void AddedNewDevice(Device msg)
+        [CapSubscribe("iotsharp.services.datastream.alarm")]
+        public async void OccurredAlarm(CreateAlarmDto alarmDto)
         {
-
-            using (var _scope = _scopeFactor.CreateScope())
+            try
             {
-                using (var _dbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
+                using (var _scope = _scopeFactor.CreateScope())
                 {
-
+                    using (var _dbContext = _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
+                    {
+                        var alm = await _dbContext.OccurredAlarm(alarmDto);
+                        await RunRules(alm.Data.OriginatorId, alarmDto, MountType.Alarm);
+                    }
                 }
             }
-        } 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"处理{alarmDto.OriginatorName} 的告警{alarmDto.AlarmType} 时遇到异常:{ex.Message}");
+
+            }
+        }
+
+
         [CapSubscribe("iotsharp.services.datastream.devicestatus")]
-        public void DeviceStatus( RawMsg status)
+        public void DeviceStatus( PlayloadData status)
         {
             try
             {
@@ -181,7 +191,7 @@ namespace IoTSharp.Handlers
 
 
         [CapSubscribe("iotsharp.services.datastream.telemetrydata")]
-        public async void StoreTelemetryData(RawMsg msg)
+        public async void StoreTelemetryData(PlayloadData msg)
         {
             var result = await _storage.StoreTelemetryAsync(msg);
             var data = from t in result.telemetries

@@ -32,28 +32,28 @@ export class AlarmlistComponent implements OnInit {
     EndDateTime: any;
     StartDateTime: any;
     AlarmType: any;
-    AlarmStatus: Number;
+    alarmStatus: any;
     OriginatorId: any;
     OriginatorName: string;
-    Serverity: Number;
-    OriginatorType: Number;
+    serverity: any;
+    originatorType: any;
   } = {
-    pi: 0,
-    ps: 10,
-    Name: '',
-    sorter: '',
-    status: null,
-    AckDateTime: null,
-    ClearDateTime: null,
-    StartDateTime: null,
-    EndDateTime: null,
-    AlarmType: '',
-    OriginatorName: '',
-    AlarmStatus: -1,
-    OriginatorId: Guid.EMPTY,
-    Serverity: -1,
-    OriginatorType: -1
-  };
+      pi: 0,
+      ps: 10,
+      Name: '',
+      sorter: '',
+      status: null,
+      AckDateTime: null,
+      ClearDateTime: null,
+      StartDateTime: null,
+      EndDateTime: null,
+      AlarmType: '',
+      OriginatorName: '',
+      alarmStatus: '-1',
+      OriginatorId: Guid.EMPTY,
+      serverity: '-1',
+      originatorType: '-1'
+    };
 
   total = 0;
   data: any[] = [];
@@ -91,19 +91,27 @@ export class AlarmlistComponent implements OnInit {
   st!: STComponent;
 
   serveritybadge: STColumnTag = {
-    0: { text: '不确定', color: '#8c8c8c' },
-    1: { text: '警告', color: '#faad14' },
-    2: { text: '次要', color: '#bae637' },
-    3: { text: '主要', color: '#1890ff' },
-    4: { text: '错误', color: '#f5222d' }
+    'Indeterminate': { text: '不确定', color: '#8c8c8c' },
+    'Warning': { text: '警告', color: '#faad14' },
+    'Minor': { text: '次要', color: '#bae637' },
+    'Major': { text: '主要', color: '#1890ff' },
+    'Critical': { text: '错误', color: '#f5222d' }
   };
 
   alarmstatusTAG: STColumnTag = {
-    0: { text: '激活未应答', color: '#ffa39e' },
-    1: { text: '激活已应答', color: '#f759ab' },
-    2: { text: '清除未应答', color: '#87e8de' },
-    3: { text: '清除已应答', color: '#d3f261' }
+    'Active_UnAck': { text: '激活未应答', color: '#ffa39e' },
+    'Active_Ack': { text: '激活已应答', color: '#f759ab' },
+    'Cleared_UnAck': { text: '清除未应答', color: '#87e8de' },
+    'Cleared_Act': { text: '清除已应答', color: '#7cb305' }
   };
+  originatorTypeTAG: STColumnTag = {
+    'Unknow': { text: '未知', color: '#ffa39e' },
+    'Device': { text: '设备', color: '#f759ab' },
+    'Gateway': { text: '网关', color: '#87e8de' },
+    'Asset': { text: '资产', color: '#d3f261' }
+  };
+
+
   ServerityTAG: STColumnTag = {
     AccessToken: { text: 'AccessToken', color: 'green' },
     X509Certificate: { text: 'X509Certificate', color: 'blue' }
@@ -111,40 +119,52 @@ export class AlarmlistComponent implements OnInit {
 
   columns: STColumn[] = [
     { title: '', index: 'Id', type: 'checkbox' },
-    { title: 'id', index: 'id' },
+    // { title: 'id', index: 'id' },
     {
-      title: '类型',
-      index: 'AlarmType'
+      title: '告警类型',
+      index: 'alarmType'
     },
     { title: '创建时间', index: 'ackDateTime', type: 'date' },
-    { title: '清除时间', index: 'clearDateTime', type: 'date' },
     { title: '警告持续的开始时间', index: 'startDateTime', type: 'date' },
-    { title: '结束时间', index: 'endDateTime', type: 'date' },
+    { title: '警告持续的结束时间', index: 'endDateTime', type: 'date' },
+    { title: '清除时间', index: 'clearDateTime', type: 'date' },
     { title: '告警状态', index: 'alarmStatus', type: 'tag', tag: this.alarmstatusTAG },
     { title: '严重程度', index: 'serverity', type: 'tag', tag: this.serveritybadge },
 
-    { title: '设备类型', index: 'originatorType' },
+    { title: '设备类型', index: 'originatorType', type: 'tag', tag: this.originatorTypeTAG },
 
     {
-      title: { i18n: 'table.operation' },
-      buttons: [
+      title: '操作', index: 'Id', buttons: [
+
         {
-          text: '修改',
-          i18n: 'common.edit',
-          acl: 60,
+          text: '确认告警',
+          pop: {
+            title: '确认告警?',
+            okType: 'primary',
+            icon: 'warning'
+          },
           click: (item: any) => {
-            this.openComponent(item.dictionaryGroupId);
-            //this._router.navigate(['manage/role/roleform'],
-            //  {
-            //    queryParams: {
-            //      UserId: item.UserId,
-            //      type: 'clone'
-            //    }
-            //  });
+
+            this.acquireAlarm(item);
+
+          
+          }, iif: record => record.alarmStatus === 'Active_UnAck' || record.alarmStatus === 'Cleared_UnAck',
+        }, {
+          text: '清除告警',
+          pop: {
+            title: '清除告警?',
+            okType: 'dashed',
+            icon: 'warning'
+          },
+          iif: record => record.alarmStatus === 'Active_Ack' || record.alarmStatus === 'Active_UnAck',
+          click: (item: any) => {
+
+            this.clearAlarm(item);
           }
-        }
-      ]
-    }
+        },
+
+        ]
+    },
   ];
   selectedRows: STData[] = [];
   description = '';
@@ -158,23 +178,22 @@ export class AlarmlistComponent implements OnInit {
     private _router: Router,
     private drawerService: NzDrawerService,
     private settingService: SettingsService
-  ) {}
+  ) { }
 
-  ngOnInit() {}
+  ngOnInit() { }
 
   onOriginatorTypeChange($event) {
     this.q.OriginatorName = '';
     this.q.OriginatorId = Guid.EMPTY;
-    this.originators=[];
+    this.originators = [];
   }
 
   onOriginatorInput($event) {
     var element = $event.target as HTMLInputElement;
-
     this.http
       .post('api/alarm/originators', {
         originatorName: element?.value ?? '',
-        OriginatorType: this.q.OriginatorType
+        OriginatorType: this.q.originatorType
       })
       .pipe(debounceTime(500))
       .subscribe(
@@ -185,69 +204,50 @@ export class AlarmlistComponent implements OnInit {
             })
           ];
         },
-        error => {},
-        () => {}
+        error => { },
+        () => { }
       );
+  }
+
+  clearAlarm(item) {
+    this.http.post('api/alarm/clearAlarm',
+      {
+        id:item.id,
+      }).subscribe(next => {
+
+      if (next?.data) {
+        this.getData();
+      }
+    }, error => {},()=>{});
+  }
+
+  acquireAlarm(item) {
+    this.http.post('api/alarm/ackAlarm',
+      {
+        id: item.id,
+      }).subscribe(next => {
+
+      if (next?.data) {
+        this.getData();
+      }
+    }, error => { }, () => { });
   }
 
   onOriginatorChange($event) {
     this.q.OriginatorId = this.originators.find(c => c.name == $event)?.id;
   }
 
-  rowchange(event) {
-    switch (event.type) {
-      case 'expand':
-        this.http
-          .post<AppMessage>('api/dictionary/index', {
-            DictionaryGroupId: event.expand.dictionaryGroupId,
-            offset: 0,
-            limit: 100
-          })
-          .subscribe(
-            x => {
-              event.expand.Children = x.data.rows;
-            },
-            y => {},
-            () => {}
-          );
-        break;
-    }
-  }
-  openComponent(id: Number): void {
-    var { nzMaskClosable, width } = this.settingService.getData('drawerconfig');
-    var title = id == -1 ? '新增字典分组' : '修改字典分组';
-    const drawerRef = this.drawerService.create<AlarmdetailComponent, { id: Number }, string>({
-      nzTitle: title,
-      nzContent: AlarmdetailComponent,
-      nzWidth: width,
-      nzMaskClosable: nzMaskClosable,
-      nzContentParams: {
-        id: id
-      }
-    });
-
-    drawerRef.afterOpen.subscribe(() => {});
-
-    drawerRef.afterClose.subscribe(data => {
-      if (typeof data === 'string') {
-      }
-
-      this.getData();
-    });
-  }
-
-  r;
   getData() {
     this.st.req = this.req;
     this.st.load(this.st.pi);
   }
 
-  add(tpl: TemplateRef<{}>) {}
+  add(tpl: TemplateRef<{}>) { }
 
   reset() {
-    setTimeout(() => {}, 1000);
+    setTimeout(() => { }, 1000);
   }
-  setstatus(number: number, status: number) {}
+  setstatus(number: number, status: number) { }
 }
 
 export interface originator {

@@ -8,6 +8,7 @@ import { environment } from '@env/environment';
 import { LayoutBasicComponent } from '../layout/basic/basic.component';
 import { LayoutBlankComponent } from '../layout/blank/blank.component';
 import { AlarmlistComponent } from './device/alarmlist/alarmlist.component';
+import { AssetentitylistComponent } from './device/assetentitylist/assetentitylist.component';
 import { AssetlistComponent } from './device/assetlist/assetlist.component';
 import { DevicegraphComponent } from './device/devicegraph/devicegraph.component';
 import { DevicelistComponent } from './device/devicelist/devicelist.component';
@@ -28,6 +29,8 @@ import { TenantlistComponent } from './tenant/tenantlist/tenantlist.component';
 import { UserlistComponent } from './user/userlist/userlist.component';
 import { CodeviewComponent } from './util/code/codeview/codeview.component';
 import { DynamicformlistComponent } from './util/dynamicform/dynamicformlist/dynamicformlist.component';
+import { RuledeviceComponent } from './flow/ruledevice/ruledevice.component';
+
 
 const routes: Routes = [
   {
@@ -68,6 +71,7 @@ const routes: Routes = [
       { path: 'flow/designer', component: DesignerComponent },
       { path: 'flow/flowlist', component: FlowlistComponent },
       { path: 'flow/scriptlist', component: ScriptlistComponent },
+      { path: 'flow/ruledevice', component: RuledeviceComponent },
       { path: 'flow/subscriptionlist', component: SubscriptionlistComponent },
       { path: 'flow/flowevents', component: FloweventsComponent },
       { path: 'flow/componentlist', component: ComponentlistComponent },
@@ -79,7 +83,12 @@ const routes: Routes = [
       { path: 'code/codeview', component: CodeviewComponent },
       { path: 'device/alarmlist', component: AlarmlistComponent },
       { path: 'device/assetlist', component: AssetlistComponent },
+      { path: 'device/assetentitylist', component: AssetentitylistComponent },
+      { path: 'device/certmgr', component: CertmgrComponent },
       { path: 'settings/certmgr', component: CertmgrComponent }
+
+
+    
     ]
   },
   // Blak Layout 空白布局

@@ -1,27 +1,21 @@
-import { ChangeDetectorRef, Component, EventEmitter, OnDestroy, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { STChange, STColumn, STColumnBadge, STColumnTag, STComponent, STData, STPage, STReq, STRes } from '@delon/abc/st';
-import { ModalHelper, SettingsService, _HttpClient } from '@delon/theme';
+import { SettingsService, _HttpClient } from '@delon/theme';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { map, tap } from 'rxjs/operators';
-import { Validators, FormBuilder, FormGroup } from '@angular/forms/forms';
-import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
-
-import { ACLService } from '@delon/acl';
-
+import { NzDrawerService } from 'ng-zorro-antd/drawer';
 import { DeviceformComponent } from '../deviceform/deviceform.component';
 import { PropformComponent } from '../propform/propform.component';
 import { interval, Subscription, zip } from 'rxjs';
 import { RulesdownlinkComponent } from '../rulesdownlink/rulesdownlink.component';
-import { appmessage, AppMessage } from '../../common/AppMessage';
-import { HttpHeaders, HttpResponse } from '@angular/common/http';
-import { saveAs, fileSaver } from 'file-saver';
-import { ClipboardService } from 'ngx-clipboard';
+import { appmessage } from '../../common/AppMessage';
 import { DevicetokendialogComponent } from '../devicetokendialog/devicetokendialog.component';
-import { fork } from 'child_process';
 import { ProppartComponent } from '../deviceprop/proppart/proppart.component';
 import { devicemodelcommand } from '../../devicemodel/devicemodelcommandparam';
 import { ExporttoassetComponent } from '../exporttoasset/exporttoasset.component';
+import { attributeitem, deviceitem, ruleitem, telemetryitem } from '../devicemodel';
+import { WidgetdeviceComponent } from '../../widgets/widgetdevice/widgetdevice.component';
+import { CommonDialogSevice } from '../../util/dialogutil';
 @Component({
   selector: 'app-devicelist',
   templateUrl: './devicelist.component.html',
@@ -50,8 +44,11 @@ export class DevicelistComponent implements OnInit, OnDestroy {
     public msg: NzMessageService,
     private router: ActivatedRoute,
     private drawerService: NzDrawerService,
-    private settingService: SettingsService
-  ) {}
+    private settingService: SettingsService,
+    private commonDialogSevice: CommonDialogSevice
+  ) {
+    //console.log(commonDialogSevice)
+  }
   ngOnDestroy(): void {
     if (this.obs) {
       this.obs.unsubscribe();
@@ -61,13 +58,13 @@ export class DevicelistComponent implements OnInit, OnDestroy {
   cetd: telemetryitem[] = [];
   cead: attributeitem[] = [];
   cerd: ruleitem[] = [];
- // cett: devicemodelcommand[] = [];
+  // cett: devicemodelcommand[] = [];
   page: STPage = {
     front: false,
     total: true,
     zeroIndexed: true,
-    showSize:true,
-    pageSizes:[10,20,50,100,500]
+    showSize: true,
+    pageSizes: [10, 20, 50, 100, 500]
   };
   q: {
     pi: number;
@@ -98,8 +95,15 @@ export class DevicelistComponent implements OnInit, OnDestroy {
   ctype = {};
   columns: STColumn[] = [
     { title: '', index: 'id', type: 'checkbox' },
-    { title: 'id', index: 'id', render: 'id' },
-    { title: '名称', index: 'name', render: 'name' },
+    {
+      title: '名称',
+      index: 'name',
+      render: 'name',
+      type: 'link',
+      click: (item: any) => {
+        this.showdeviceDetail(item.id);
+      }
+    },
     { title: '设备类型', index: 'deviceType', type: 'tag', tag: this.DeviceTAG },
     { title: '在线状态', index: 'online', type: 'badge', badge: this.BADGE },
     { title: '最后活动时间', index: 'lastActive', type: 'date' },
@@ -160,16 +164,14 @@ export class DevicelistComponent implements OnInit, OnDestroy {
         },
         {
           acl: 110,
-          text: '删除', pop: {
+          text: '删除',
+          pop: {
             title: '确认删除设备?',
             okType: 'danger',
-            icon: 'warning',
+            icon: 'warning'
           },
           click: (item: any) => {
-
-
-
-         this.delete(item.id);
+            this.delete(item.id);
           }
         }
       ]
@@ -230,14 +232,13 @@ export class DevicelistComponent implements OnInit, OnDestroy {
   }
 
   exporttoasset(dev: any[]) {
-    console.log(dev);
     if (dev.length == 0) {
       dev = this.st.list.filter(c => c.checked);
     }
     var { nzMaskClosable, width } = this.settingService.getData('drawerconfig');
     let title = '属性修改';
     const drawerRef = this.drawerService.create<
-    ExporttoassetComponent,
+      ExporttoassetComponent,
       {
         params: {
           id: string;
@@ -261,7 +262,6 @@ export class DevicelistComponent implements OnInit, OnDestroy {
     });
     drawerRef.afterClose.subscribe(() => {});
   }
-
 
   downlink(dev: any[]) {
     if (dev.length == 0) {
@@ -290,9 +290,9 @@ export class DevicelistComponent implements OnInit, OnDestroy {
       }
     });
     drawerRef.afterOpen.subscribe(() => {
-      this.getData();
+    
     });
-    drawerRef.afterClose.subscribe(() => {});
+    drawerRef.afterClose.subscribe(() => {  this.getData();});
   }
   edit(id: string): void {
     var { nzMaskClosable, width } = this.settingService.getData('drawerconfig');
@@ -396,7 +396,7 @@ export class DevicelistComponent implements OnInit, OnDestroy {
 
   getData() {
     this.st.req = this.req;
-    this.st.load(1);
+    this.st.load(this.st.pi);
   }
 
   onchange($events: STChange): void {
@@ -407,6 +407,7 @@ export class DevicelistComponent implements OnInit, OnDestroy {
     switch ($events.type) {
       case 'expand':
         if ($events.expand.expand) {
+          this.getdevicedata($events.expand?.id);
           if (this.obs) {
             this.obs.unsubscribe();
           }
@@ -414,88 +415,8 @@ export class DevicelistComponent implements OnInit, OnDestroy {
           this.cetd = [];
           this.cerd = [];
           // this.cett = [];
-          this.obs = interval(1000).subscribe(async () => {
-            zip(
-              this.http.get<appmessage<attributeitem[]>>('api/Devices/' + $events.expand?.id + '/AttributeLatest'),
-              this.http.get<appmessage<ruleitem[]>>('api/Rules/GetDeviceRules?deviceId=' + $events.expand?.id),
-              this.http.get<appmessage<telemetryitem[]>>('api/Devices/' + $events.expand?.id + '/TelemetryLatest')
-              //   this.http.get<appmessage<devicemodelcommand[]>>('api/deviceModel/getCommandsByDevice?id=' + $events.expand?.id ),
-            ).subscribe(
-              ([
-                attributes,
-                rules,
-                telemetries
-                //  commands
-              ]) => {
-                // $events.expand.attributes = attributes.data;
-                // $events.expand.rules = rules.data;
-                // $events.expand.telemetries = telemetries.data;
-
-                if (rules.data.length == 0) {
-                  this.cerd = [];
-                } else {
-                  for (var i = 0; i < rules.data.length; i++) {
-                    var index = this.cerd.findIndex(c => c.ruleId == rules.data[i].ruleId);
-                    if (index === -1) {
-                      this.cerd.push(rules.data[i]);
-                    }
-                  }
-
-                  var removed: ruleitem[] = [];
-
-                  for (var i = 0; i < this.cerd.length; i++) {
-                    if (!rules.data.some(c => c.ruleId == this.cerd[i].ruleId)) {
-                      removed = [...removed, this.cerd[i]];
-                    }
-                  }
-
-                  for (var item of removed) {
-                    this.cerd.slice(
-                      this.cerd.findIndex(c => c.ruleId == item.ruleId),
-                      1
-                    );
-                  }
-                }
-
-                if (this.cetd.length === 0) {
-                  this.cetd = telemetries.data;
-                } else {
-                  for (var i = 0; i < telemetries.data.length; i++) {
-                    var flag = false;
-                    for (var j = 0; j < this.cetd.length; j++) {
-                      if (telemetries.data[i].keyName == this.cetd[j].keyName) {
-                        this.cetd[j].value = telemetries.data[i].value;
-                        flag = true;
-                      }
-                    }
-                    if (!flag) {
-                      this.cetd.push(telemetries.data[i]);
-                    }
-                  }
-                }
-
-                if (this.cead.length === 0) {
-                  this.cead = attributes.data;
-                } else {
-                  for (var i = 0; i < attributes.data.length; i++) {
-                    var flag = false;
-                    for (var j = 0; j < this.cead.length; j++) {
-                      if (attributes.data[i].keyName == this.cead[j].keyName) {
-                        this.cead[j].value = attributes.data[i].value;
-                        flag = true;
-                      }
-                    }
-                    if (!flag) {
-                      this.cead.push(attributes.data[i]);
-                    }
-                  }
-                }
-
-                // if(this.cett.length==0){
-                //   this.cett=commands.data;
-                // }
-              }
-            );
+          this.obs = interval(6000).subscribe(async () => {
+            this.getdevicedata($events.expand?.id);
           });
         } else {
           this.cead = [];
@@ -509,6 +430,146 @@ export class DevicelistComponent implements OnInit, OnDestroy {
 
         break;
     }
+  }
+
+  getdevicedata(deviceid) {
+    zip(
+      this.http.get<appmessage<attributeitem[]>>('api/Devices/' + deviceid + '/AttributeLatest'),
+      this.http.get<appmessage<ruleitem[]>>('api/Rules/GetDeviceRules?deviceId=' + deviceid),
+      this.http.get<appmessage<telemetryitem[]>>('api/Devices/' + deviceid + '/TelemetryLatest')
+      //   this.http.get<appmessage<devicemodelcommand[]>>('api/deviceModel/getCommandsByDevice?id=' + $events.expand?.id ),
+    ).subscribe(
+      ([
+        attributes,
+        rules,
+        telemetries
+        //  commands
+      ]) => {
+        // $events.expand.attributes = attributes.data;
+        // $events.expand.rules = rules.data;
+        // $events.expand.telemetries = telemetries.data;
+
+        if (rules.data.length == 0) {
+          this.cerd = [];
+        } else {
+          for (var i = 0; i < rules.data.length; i++) {
+            var index = this.cerd.findIndex(c => c.ruleId == rules.data[i].ruleId);
+            if (index === -1) {
+              this.cerd.push(rules.data[i]);
+            }
+          }
+
+          var removed: ruleitem[] = [];
+
+          for (var i = 0; i < this.cerd.length; i++) {
+            if (!rules.data.some(c => c.ruleId == this.cerd[i].ruleId)) {
+              removed = [...removed, this.cerd[i]];
+            }
+          }
+
+          for (var item of removed) {
+            this.cerd.slice(
+              this.cerd.findIndex(c => c.ruleId == item.ruleId),
+              1
+            );
+          }
+        }
+
+        if (this.cetd.length === 0) {
+          this.cetd = telemetries.data;
+        } else {
+          for (var i = 0; i < telemetries.data.length; i++) {
+            var flag = false;
+            for (var j = 0; j < this.cetd.length; j++) {
+              if (telemetries.data[i].keyName === this.cetd[j].keyName) {
+                switch (typeof telemetries.data[i].value) {
+                  case 'number':
+                    if (this.cetd[j]['value']) {
+                      if (this.cetd[j]['value'] > telemetries.data[i]['value']) {
+                        this.cetd[j]['class'] = 'valdown';
+                      } else if (this.cetd[j]['value'] < telemetries.data[i]['value']) {
+                        this.cetd[j]['class'] = 'valup';
+                      } else {
+                        this.cetd[j]['class'] = 'valnom';
+                      }
+                    } else {
+                      this.cetd[j]['class'] = 'valnom';
+                    }
+                    break;
+                  default:
+                    if (this.cetd[j]['value']) {
+                      if (this.cetd[j]['value'] === telemetries.data[i]['value']) {
+                        this.cetd[j]['class'] = 'valnom';
+                      } else {
+                        this.cetd[j]['class'] = 'valchange';
+                      }
+                    } else {
+                      this.cetd[j]['class'] = 'valnom';
+                    }
+                    break;
+                }
+                this.cetd[j].value = telemetries.data[i].value;
+                flag = true;
+              }
+            }
+            if (!flag) {
+              telemetries.data[i].class = 'valnew';
+              this.cetd.push(telemetries.data[i]);
+            }
+          }
+        }
+
+        if (this.cead.length === 0) {
+          this.cead = attributes.data;
+        } else {
+          for (var i = 0; i < attributes.data.length; i++) {
+            var flag = false;
+            for (var j = 0; j < this.cead.length; j++) {
+              if (attributes.data[i].keyName === this.cead[j].keyName) {
+                switch (typeof attributes.data[i].value) {
+                  case 'number':
+                    if (this.cead[j]['value']) {
+                      if (this.cead[j]['value'] > attributes.data[i]['value']) {
+                        this.cead[j]['class'] = 'valdown';
+                      } else if (this.cead[j]['value'] < attributes.data[i]['value']) {
+                        this.cead[j]['class'] = 'valup';
+                      } else {
+                        this.cead[j]['class'] = 'valnom';
+                      }
+                    } else {
+                      this.cead[j]['class'] = 'valnom';
+                    }
+
+                    break;
+                  default:
+                    if (this.cead[j]['value']) {
+                      if (this.cead[j]['value'] === attributes.data[i]['value']) {
+                        this.cead[j]['class'] = 'valnom';
+                      } else {
+                        this.cead[j]['class'] = 'valchange';
+                      }
+                    } else {
+                      this.cead[j]['class'] = 'valnom';
+                    }
+                    break;
+                }
+
+                this.cead[j].value = attributes.data[i].value;
+                flag = true;
+              }
+            }
+            if (!flag) {
+              attributes.data[i].class = 'valnew';
+              this.cead.push(attributes.data[i]);
+            }
+          }
+        }
+
+        // if(this.cett.length==0){
+        //   this.cett=commands.data;
+        // }
+      }
+    );
   }
 
   executeCommand(item: deviceitem, command: devicemodelcommand) {
@@ -529,52 +590,41 @@ export class DevicelistComponent implements OnInit, OnDestroy {
     );
   }
 
-  removeruleprop(device:deviceitem,prop:attributeitem){
-    this.http.delete('api/device/removeAttribute?deviceId=' + device.id + '&KeyName=' + prop.keyName+'&dataSide='+prop.dataSide).subscribe(
-      () => {
-        this.cead = this.cead.filter(x => x.keyName != prop.keyName);
-      },
-      () => {},
-      () => {}
-    );
-
+  removeprop(device: deviceitem, prop: attributeitem) {
+    this.http
+      .delete('api/devices/removeAttribute?deviceId=' + device.id + '&KeyName=' + prop.keyName + '&dataSide=' + prop.dataSide)
+      .subscribe(
+        () => {
+          this.cead = this.cead.filter(x => x.keyName != prop.keyName);
+        },
+        () => {},
+        () => {}
+      );
   }
-}
 
-export interface deviceitem {
-  deviceType?: string;
-  id?: string;
-  lastActive?: string;
-  name?: string;
-  online?: string;
-  owner?: string;
-  tenant?: string;
-  identityId?: string;
-  timeout?: string;
-  customerId?: string;
-  telemetries?: telemetryitem[];
-  attributes?: attributeitem[];
-  rules?: ruleitem[];
-  expand?: boolean;
-  identityType?: string;
-  identityValue?: string;
-}
+  showdeviceDetail(id) {
+    this.commonDialogSevice.showDeviceDialog(id);
 
-export interface telemetryitem {
-  keyName: string;
-  dateTime: string;
-  value: string;
-}
-export interface attributeitem {
-  keyName: string;
-  dataSide: string;
-  dateTime: string;
-  value: string;
-}
+    //   var { nzMaskClosable, width } = this.settingService.getData('drawerconfig');
+    //   let title = '设备详情';
+    //   const drawerRef = this.drawerService.create<
+    //     WidgetdeviceComponent,
+    //     {
+    //       id: string;
+    //     },
+    //     string
+    //   >({
+    //     nzTitle: title,
+    //     nzContent: WidgetdeviceComponent,
+    //     nzWidth: window.innerWidth*0.8,
+    //     nzMaskClosable: nzMaskClosable,
+    //     nzContentParams: {
+    //       id: id
+    //     }
+    //   });
+    //   drawerRef.afterOpen.subscribe(() => {
 
-export interface ruleitem {
-  ruleId: number;
-  name: string;
-  ruleDesc: string;
-  describes: string;
+    //   });
+    //   drawerRef.afterClose.subscribe(() => { });
+  }
 }

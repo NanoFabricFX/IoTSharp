@@ -94,6 +94,17 @@ namespace IoTSharp.Dtos
         /// 起因设备类型
         /// </summary>
         public OriginatorType OriginatorType { get; set; }
+
+        public object Originator { get; set; }
+    }
+
+
+    public class AlarmStatusDto
+    {
+        public Guid Id { get; set; }
+
+        public AlarmStatus AlarmStatus { get; set; }
+
     }
 
     public class AssetDto
