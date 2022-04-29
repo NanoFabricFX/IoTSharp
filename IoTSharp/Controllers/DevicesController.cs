@@ -35,6 +35,7 @@ using System.Xml;
 using MongoDB.Bson.IO;
 using Dic = System.Collections.Generic.Dictionary<string, string>;
 using DicKV = System.Collections.Generic.KeyValuePair<string, string>;
+using IoTSharp.Gateways;
 
 namespace IoTSharp.Controllers
 {
@@ -46,18 +47,7 @@ namespace IoTSharp.Controllers
     [ApiController]
     public class DevicesController : ControllerBase
     {
-        private const string _map_to_telemety_ = "_map_to_telemetry_";
-        private const string _map_to_attribute_ = "_map_to_attribute_";
-        private const string _map_to_devname = "_map_to_devname";
-        private const string _map_to_jsontext_in_json = "_map_to_jsontext_in_json";
-        private const string _map_to_data_in_array = "_map_to_data_in_array";
-        private const string _map_to_subdevname = "_map_to_subdevname";
-        private const string _map_var_devname = "$devname";
-        private const string _map_var_subdevname = "$subdevname";
-        private const string _map_to_devname_format = "_map_to_devname_format";
-        private const string _map_to_ = "_map_to_";
-        private const string _map_var_ts_format = "_map_var_ts_format";
-        private const string _map_var_ts_field = "_map_var_ts_field";
+       
         private readonly ApplicationDbContext _context;
         private readonly MqttClientOptions _mqtt;
         private readonly UserManager<IdentityUser> _userManager;
@@ -139,14 +129,14 @@ namespace IoTSharp.Controllers
                     {
                         if (System.Text.RegularExpressions.Regex.IsMatch(m.Name, @"(?im)^[{(]?[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}[)}]?$"))
                         {
-                            condition = condition.And(x => x.Id==Guid.Parse(m.Name));
+                            condition = condition.And(x => x.Id == Guid.Parse(m.Name));
                         }
                         else
                         {
                             condition = condition.And(x => x.Name.Contains(m.Name));
                         }
 
-                  
+
                     }
 
                     return new ApiResult<PagedData<DeviceDetailDto>>(ApiCode.Success, "OK", new PagedData<DeviceDetailDto>
@@ -722,18 +712,115 @@ namespace IoTSharp.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResult<Guid>), StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ApiResult<Device>> DeleteDevice(Guid id)
+        public async Task<ApiResult<bool>> DeleteDevice(Guid id)
         {
             Device device = Found(id);
+
+
+
+
             if (device == null)
             {
-                return new ApiResult<Device>(ApiCode.NotFoundTenantOrCustomer, "Device {id} not found", null);
+                return new ApiResult<bool>(ApiCode.NotFoundTenantOrCustomer, "Device {id} not found", false);
             }
-            device.Status = -1;
-            device.Name = $"DELETED_{device.Name}";
-            _context.Device.Update(device);
-            await _context.SaveChangesAsync();
-            return new ApiResult<Device>(ApiCode.Success, "Ok", device);
+
+            try
+            {
+                if (device.DeviceType == DeviceType.Device)
+                {
+                    var assets = await _context.Assets.Where(c => c.OwnedAssets.Any(d => d.DeviceId == device.Id))
+                        .ToListAsync();
+
+                    if (assets.Count > 0)
+                    {
+                        
+                        return new ApiResult<bool>(ApiCode.NotFoundTenantOrCustomer,
+                            "Please remove the current device from the following known assets " +
+                            assets.Aggregate("", (x, y) => x + "," + y.Name), false);
+                    }
+
+
+                    var cert = _context.DeviceIdentities.FirstOrDefault(c => c.DeviceId == device.Id);
+                    if (cert != null)
+                    {
+                        _context.DeviceIdentities.RemoveRange(cert);
+                        await _context.SaveChangesAsync();
+                    }
+
+
+
+                    var attrs = await _context.DataStorage.Where(c => c.DeviceId == device.Id).ToArrayAsync();
+                    if (attrs.Length > 0)
+                    {
+                        _context.DataStorage.RemoveRange(attrs);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    var devicerules = await _context.DeviceRules.Where(c => c.Device.Id == device.Id).ToArrayAsync();
+
+                    if (devicerules.Length > 0)
+                    {
+                        _context.DeviceRules.RemoveRange(devicerules);
+                        await _context.SaveChangesAsync();
+                    }
+                    _context.Device.Remove(device);
+                    await _context.SaveChangesAsync();
+                    return new ApiResult<bool>(ApiCode.Success, "Ok", true);
+                }
+
+                if (device.DeviceType == DeviceType.Gateway)
+                {
+
+                    var devices = await _context.Device.Where(c => c.Owner.Id == device.Id).ToArrayAsync();
+                    if (devices.Length > 0)
+                    {
+                        return new ApiResult<bool>(ApiCode.NotFoundTenantOrCustomer,
+                            "Please remove the following devices from the current gateway: " +
+                            devices.Aggregate("", (x, y) => x + "," + y.Name), false);
+
+                    }
+                    var assets = await _context.Assets.Where(c => c.OwnedAssets.Any(d => d.DeviceId == device.Id))
+                        .ToArrayAsync();
+
+                    if (assets.Length > 0)
+                    {
+
+                        return new ApiResult<bool>(ApiCode.NotFoundTenantOrCustomer,
+                            "Please remove the current gateway from the following known assets " +
+                            assets.Aggregate("", (x, y) => x + "," + y.Name), false);
+                    }
+
+                    var cert = _context.DeviceIdentities.FirstOrDefault(c => c.DeviceId == device.Id);
+                    if (cert != null)
+                    {
+                        _context.DeviceIdentities.RemoveRange(cert);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    var attrs = await _context.DataStorage.Where(c => c.DeviceId == device.Id).ToArrayAsync();
+                    if (attrs.Length > 0)
+                    {
+                        _context.DataStorage.RemoveRange(attrs);
+                        await _context.SaveChangesAsync();
+                    }
+                    var devicerules = await _context.DeviceRules.Where(c => c.Device.Id == device.Id).ToArrayAsync();
+                    if (devicerules.Length > 0)
+                    {
+                        _context.DeviceRules.RemoveRange(devicerules);
+                        await _context.SaveChangesAsync();
+                    }
+                    _context.Device.Remove(device);
+                    await _context.SaveChangesAsync();
+                    return new ApiResult<bool>(ApiCode.Success, "Ok", true);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return new ApiResult<bool>(ApiCode.Exception, ex.Message, false);
+            }
+            return new ApiResult<bool>(ApiCode.NotFoundTenantOrCustomer, "Device or Gateway {id} not found", false);
+
         }
 
         private bool DeviceExists(Guid id)
@@ -964,157 +1051,14 @@ namespace IoTSharp.Controllers
             }
             else
             {
-                string json = body;
-                if (format == "xml")
-                {
-                    XmlDocument doc = new XmlDocument();
-                    doc.LoadXml(body);
-                    json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(doc);
-                }
-                var atts_cach = await _caching.GetAsync($"_map_{_dev.Id}", async () =>
-                {
-                    var guids = from al in _context.AttributeLatest where al.DeviceId == _dev.Id && al.KeyName.StartsWith(_map_to_) select al;
-                    return await guids.ToArrayAsync();
-                }
-             , TimeSpan.FromSeconds(_setting.RuleCachingExpiration));
-                if (atts_cach.HasValue)
-                {
-                    try
-                    {
-                        var jroot = JToken.Parse(json);
-                        JToken jt = null;
-                        var atts = atts_cach.Value;
-                        var pathx = atts.FirstOrDefault(al => al.KeyName == _map_to_jsontext_in_json)?.Value_String;
-                        if (pathx != null)
-                        {
-                            jt = JToken.Parse(jroot.SelectToken(pathx).ToObject<string>());
-                        }
-                        else
-                        {
-                            jt = jroot;
-                        }
-                        var data_in_array = atts.FirstOrDefault(al => al.KeyName == _map_to_data_in_array)?.Value_String;
-                        var ts_format = atts.FirstOrDefault(g => g.KeyName == _map_var_ts_format)?.Value_String ?? string.Empty;
-                        var ts_field = atts.FirstOrDefault(g => g.KeyName == _map_var_ts_field)?.Value_String ?? string.Empty;
-                        if (!string.IsNullOrEmpty(data_in_array))
-                        {
-                            var subdevname = atts.FirstOrDefault(al => al.KeyName == _map_to_subdevname)?.Value_String;
-                            var jary = jt.SelectToken(data_in_array) as JArray;
-                            jary.Children().ForEach(jo =>
-                            {
-                                string _devname = buid_dev_name(atts, jt, jo);
-                                push_one_device_data_with_json(jo, jt, _dev, _devname, atts, ts_field, ts_format);
-                            });
-                        }
-                        else
-                        {
-                            string _devname = buid_dev_name(atts, jt, null);
-                            push_one_device_data_with_json(jt, jroot, _dev, _devname, atts, ts_field, ts_format);
-                        }
-                        return Ok(new ApiResult(ApiCode.Success, "OK"));
-                    }
-                    catch (Exception ex)
-                    {
-                        return BadRequest(new ApiResult(ApiCode.Exception, ex.Message));
-                    }
-                }
-                else
-                {
-                    _logger.LogInformation($"{_dev}的数据不符合规范， 也无相关规则链处理。");
-                    return BadRequest(new ApiResult(ApiCode.InValidData, $"{_dev}的数据不符合规范， 也无相关规则链处理。"));
-                }
+                using var sc = _scopeFactor.CreateScope();
+                var hg = sc.ServiceProvider.GetService<RawDataGateway>();
+                var result = await hg.ExecuteAsync(_dev, format, body);
+                return result.Code == (int)ApiCode.Success ? Ok(result) : BadRequest(result);
             }
         }
 
-        private string buid_dev_name(AttributeLatest[] atts, JToken jt, JToken jc)
-        {
-            string _result = string.Empty;
-            var devnamekey = atts.FirstOrDefault(g => g.KeyName == _map_to_devname);
-            var subdevnamekey = atts.FirstOrDefault(g => g.KeyName == _map_to_subdevname);
-            if (devnamekey != null)
-            {
-                var devnameformatkey = atts.FirstOrDefault(g => g.KeyName == _map_to_devname_format)?.Value_String ?? _map_var_devname;
-                var devname = (jt.SelectToken(devnamekey.Value_String) as JValue)?.ToObject<string>();
-                var subdevname = (subdevnamekey != null && (jc != null)) ? (jc.SelectToken(subdevnamekey.Value_String) as JValue)?.ToObject<string>() : string.Empty;
-                if (!string.IsNullOrEmpty(devnameformatkey))
-                {
-                    _result = devnameformatkey;
-                    if (!string.IsNullOrEmpty(devname)) _result = _result.Replace(_map_var_devname, devname);
-                    if (!string.IsNullOrEmpty(subdevname)) _result = _result.Replace(_map_var_subdevname, subdevname);
-                }
-                else
-                {
-                    _result = $"{devname}{subdevname}";
-                }
-            }
-            return _result;
-        }
 
-        private void push_one_device_data_with_json(JToken jt, JToken jroot, Device _dev, string _devname, AttributeLatest[] atts, string ts_field, string ts_format)
-        {
-            var device = _dev.JudgeOrCreateNewDevice(_devname, _scopeFactor, _logger);
-            var pairs_att = new Dictionary<string, object>();
-            var pairs_tel = new Dictionary<string, object>();
-            DateTime ts = DateTime.Now;
-
-            atts?.ToList().ForEach(g =>
-            {
-                JValue jv = null;
-                if (g.Value_String.StartsWith("@"))//如果是@开头， 则从父节点取
-                {
-                    jv = jroot.SelectToken(g.Value_String.Substring(1)) as JValue;
-                }
-                else
-                {
-                    jv = jt.SelectToken(g.Value_String) as JValue;
-                }
-                var value = (jv)?.JValueToObject();
-                if (value != null && g.KeyName?.Length > 0)
-                {
-                    if (!string.IsNullOrEmpty(ts_field))
-                    {
-                        if (g.KeyName == $"{_map_to_attribute_}{ts_field}" || g.KeyName == $"{_map_to_telemety_}{ts_field}")
-                        {
-                            if (!string.IsNullOrEmpty(ts_format))
-                            {
-                                if (!DateTime.TryParseExact(value as string, ts_format, null, System.Globalization.DateTimeStyles.None, out ts))
-                                {
-                                    ts = DateTime.Now;
-                                }
-                            }
-                            else
-                            {
-                                if (!DateTime.TryParse(value as string, out ts))
-                                {
-                                    ts = DateTime.Now;
-                                }
-                            }
-                        }
-                    }
-                    if (g.KeyName.StartsWith(_map_to_attribute_) && g.KeyName.Length > _map_to_attribute_.Length)
-                    {
-                        pairs_att.Add(g.KeyName.Substring(_map_to_attribute_.Length), value);
-                    }
-                    else if (g.KeyName.StartsWith(_map_to_telemety_) && g.KeyName.Length > _map_to_telemety_.Length)
-                    {
-                        pairs_tel.Add(g.KeyName.Substring(_map_to_telemety_.Length), value);
-                    }
-                }
-            });
-
-            if (pairs_tel.Any())
-            {
-                _queue.PublishTelemetryData(new PlayloadData() { ts = ts, DeviceId = device.Id, MsgBody = pairs_tel, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.TelemetryData });
-            }
-            if (pairs_att.Any())
-            {
-                _queue.PublishAttributeData(new PlayloadData() { ts = ts, DeviceId = device.Id, MsgBody = pairs_att, DataSide = DataSide.ClientSide, DataCatalog = DataCatalog.AttributeData });
-            }
-            _queue.PublishDeviceStatus(device.Id, DeviceStatus.Good);
-            _queue.PublishDeviceStatus(_dev.Id, DeviceStatus.Good);
-
-
-        }
 
         /// <summary>
         /// 上传原始Json或者xml 通过规则链进行解析。 
@@ -1226,7 +1170,7 @@ namespace IoTSharp.Controllers
             var result = await _context.SaveAsync<AttributeLatest>(attributes.anyside, devid, DataSide.AnySide);
             var result1 = await _context.SaveAsync<AttributeLatest>(attributes.serverside, devid, DataSide.ServerSide);
             var result2 = await _context.SaveAsync<AttributeLatest>(attributes.clientside, devid, DataSide.ClientSide);
-            if (result.ret > 0 && result1.ret > 0&& result2.ret>0)
+            if (result.ret > 0 && result1.ret > 0 && result2.ret > 0)
             {
                 return new ApiResult<Dic>(ApiCode.Success, "Ok", null);
             }
