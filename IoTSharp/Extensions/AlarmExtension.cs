@@ -90,12 +90,33 @@ namespace IoTSharp.Extensions
                     StartDateTime = DateTime.Now,
                 };
                 action?.Invoke(alarm);
-                var isone = from a in _context.Alarms where a.OriginatorId == alarm.OriginatorId && a.AlarmType == alarm.AlarmType select a;
+                var isone = from a in _context.Alarms where a.OriginatorId == alarm.OriginatorId && a.AlarmType == alarm.AlarmType && (a.AlarmStatus == AlarmStatus.Cleared_UnAck|| a.AlarmStatus == AlarmStatus.Active_UnAck) select a;
                 if (isone.Any())
                 {
                     var old = isone.First();
                     old.AlarmDetail = alarm.AlarmDetail;
-                    old.EndDateTime = DateTime.Now;
+                    if ( old.Serverity != dto.Serverity)
+                    {
+                        if (old.Serverity== ServerityLevel.Indeterminate && dto.Serverity!= ServerityLevel.Indeterminate)
+                        {
+                            old.StartDateTime = DateTime.Now;
+                            alarm.Propagate = true;
+                        }
+                        else if (old.Serverity != ServerityLevel.Indeterminate && dto.Serverity == ServerityLevel.Indeterminate)
+                        {
+                            old.EndDateTime = DateTime.Now;
+                            if (old.ClearDateTime.Year == 1970)
+                            {
+                                old.ClearDateTime = DateTime.Now;
+                            }
+                            alarm.Propagate = true;
+                        }
+                        else
+                        {
+                            alarm.Propagate = false;
+                        }
+                        old.Serverity = dto.Serverity;
+                    }
                 }
                 else
                 {

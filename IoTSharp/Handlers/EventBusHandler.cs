@@ -60,7 +60,7 @@ namespace IoTSharp.Handlers
                             Dictionary<string, object> dc = new Dictionary<string, object>();
                             mb.ToList().ForEach(kp =>
                             {
-                                if (kp.Value.GetType() == typeof(System.Text.Json.JsonElement))
+                                if (kp.Value?.GetType() == typeof(System.Text.Json.JsonElement))
                                 {
                                     var je = (System.Text.Json.JsonElement)kp.Value;
                                     switch (je.ValueKind)
@@ -91,7 +91,7 @@ namespace IoTSharp.Handlers
                                             break;
                                     }
                                 }
-                                else
+                                else if (kp.Value != null)
                                 {
                                     dc.Add(kp.Key, kp.Value);
                                 }
@@ -136,7 +136,10 @@ namespace IoTSharp.Handlers
                         {
                             alarmDto.warnDataId = alm.Data.Id;
                             alarmDto.CreateDateTime = alm.Data.AckDateTime;
-                            await RunRules(alm.Data.OriginatorId, alarmDto, MountType.Alarm);
+                            if (alm.Data.Propagate)
+                            {
+                                await RunRules(alm.Data.OriginatorId, alarmDto, MountType.Alarm);
+                            }
                         }
                         else
                         {
@@ -233,7 +236,14 @@ namespace IoTSharp.Handlers
                 {
                     rules.Value.ToList().ForEach(async g =>
                     {
-                        await _flowRuleProcessor.RunFlowRules(g, obj, devid, EventType.Normal, null);
+                        try
+                        {
+                            await _flowRuleProcessor.RunFlowRules(g, obj, devid, EventType.Normal, null);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex,$"为设备{devid}执行规则链{g}时遇到错误{ex.Message}");
+                        }
                     });
                 }
                 else
