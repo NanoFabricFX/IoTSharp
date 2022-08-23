@@ -1,50 +1,51 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
 import { _HttpClient } from '@delon/theme';
 import { NzSafeAny } from 'ng-zorro-antd/core/types';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { appmessage } from 'src/app/models/appmessage';
 
 @Component({
   selector: 'app-account-settings-security',
   templateUrl: './security.component.html',
-  styleUrls: ['./security.component.less'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ProAccountSettingsSecurityComponent implements OnInit{  form: FormGroup;
-  constructor(public msg: NzMessageService,private http: _HttpClient,      private fb: FormBuilder,) {
-
+export class ProAccountSettingsSecurityComponent implements OnInit {
+  form: FormGroup;
+  constructor(public msg: NzMessageService, private http: _HttpClient, private fb: FormBuilder) {
     this.form = fb.group({
-      pass: ['', [Validators.required, ]],
+      pass: ['', [Validators.required]],
       passnew: ['', [Validators.required, Validators.minLength(6), ProAccountSettingsSecurityComponent.checkPassword.bind(this)]],
-      passnewsecond: ['', [Validators.required, Validators.minLength(6), ProAccountSettingsSecurityComponent.passwordEquar]],
+      passnewsecond: ['', [Validators.required, Validators.minLength(6), ProAccountSettingsSecurityComponent.passwordEquar]]
     });
-
-
   }
-  ngOnInit(): void {
 
-
-
-  }
-  save(){    const data = this.form.value;
+  ngOnInit(): void {}
+  save() {
+    const data = this.form.value;
     if (this.form.invalid) {
       return;
     }
-    this.http.put('api/Account/ModifyMyPassword', data).subscribe((x) => {
-      if(x.code===10000){
-
-
-      }
-    })
-
-
-    
-  } status = 'pool';
+    this.http.put<appmessage<any>>('api/Account/ModifyMyPassword', data).subscribe({
+      next: next => {
+        if (next.code === 10000) {
+          this.msg.create('error', '密码修改成功');
+        } else {
+          this.msg.create('error', '密码修改异常:'+next.msg);
+        }
+      },
+      error: error => {
+        this.msg.create('error', '密码修改异常');
+      },
+      complete: () => {}
+    });
+  }
+  status = 'pool';
   progress = 0;
   passwordProgressMap: { [key: string]: 'success' | 'normal' | 'exception' } = {
     ok: 'success',
     pass: 'normal',
-    pool: 'exception',
+    pool: 'exception'
   };
   visible = false;
   static checkPassword(control: FormControl): NzSafeAny {

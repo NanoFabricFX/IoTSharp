@@ -62,6 +62,7 @@ namespace IoTSharp.Controllers
             SignInManager<IdentityUser> signInManager, ILogger<DevicesController> logger, MqttServer serverEx, ApplicationDbContext context, MqttClientOptions mqtt, IStorage storage, IOptions<AppSettings> options, ICapPublisher queue
             , IEasyCachingProviderFactory factory, FlowRuleProcessor flowRuleProcessor, IServiceScopeFactory scopeFactor)
         {
+            string _hc_Caching = $"{nameof(CachingUseIn)}-{Enum.GetName(options.Value.CachingUseIn)}";
             _context = context;
             _mqtt = mqtt;
             _userManager = userManager;
@@ -72,7 +73,7 @@ namespace IoTSharp.Controllers
             _setting = options.Value;
             _queue = queue;
             _flowRuleProcessor = flowRuleProcessor;
-            _caching = factory.GetCachingProvider("iotsharp");
+            _caching = factory.GetCachingProvider(_hc_Caching);
             _scopeFactor = scopeFactor;
         }
 
@@ -1090,6 +1091,9 @@ namespace IoTSharp.Controllers
                             _logger.LogInformation($"{_dev.Id}的数据通过规则链{g}进行处理。");
 
                             var result = await _flowRuleProcessor.RunFlowRules(g, Newtonsoft.Json.JsonConvert.DeserializeObject(body), _dev.Id, EventType.Normal, null);
+                     
+                       //     _context.SaveFlowResult(_dev.Id,g, result);
+
                         });
                         return Ok(new ApiResult(ApiCode.Success, "OK"));
                     }

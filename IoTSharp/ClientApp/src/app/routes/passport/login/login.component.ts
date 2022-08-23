@@ -1,39 +1,37 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, Optional, ViewChild } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { I18NService, StartupService } from '@core';
+import { StartupService } from '@core';
 import { ReuseTabService } from '@delon/abc/reuse-tab';
 import { DA_SERVICE_TOKEN, ITokenService, SocialOpenType, SocialService } from '@delon/auth';
-import { ALAIN_I18N_TOKEN, SettingsService, _HttpClient } from '@delon/theme';
+import { SettingsService, _HttpClient } from '@delon/theme';
 import { environment } from '@env/environment';
-
+import { Guid } from 'guid-typescript';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NzTabChangeEvent } from 'ng-zorro-antd/tabs';
-import { finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs';
+import { VertifyQuery, ControlInput } from '../../widgets/slidecontrol/control';
+import { SlidecontrolComponent } from '../../widgets/slidecontrol/slidecontrol.component';
 
-import { Guid } from 'guid-typescript';
-import { SlidecontrolComponent } from '../../util/slidecontrol/slidecontrol.component';
-import { ControlInput, VertifyQuery } from '../../util/slidecontrol/control';
 @Component({
   selector: 'passport-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.less'],
   providers: [SocialService],
-  
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UserLoginComponent implements OnDestroy,OnInit {
-   isVisible:boolean=false;
-   isVertify:boolean=false;
-   clientid= Guid.create();
+export class UserLoginComponent implements OnDestroy {
+  isVisible: boolean = false;
+  isVertify: boolean = false;
+  clientid = Guid.create();
   private query: VertifyQuery;
   public controlInput: ControlInput;
-  @ViewChild(SlidecontrolComponent, {static: true})
+  @ViewChild(SlidecontrolComponent, { static: true })
   slide: SlidecontrolComponent;
   constructor(
     fb: FormBuilder,
-    private cdr: ChangeDetectorRef, 
+    private cdr: ChangeDetectorRef,
     private router: Router,
     private settingsService: SettingsService,
     private socialService: SocialService,
@@ -44,8 +42,7 @@ export class UserLoginComponent implements OnDestroy,OnInit {
     private startupSrv: StartupService,
     public http: _HttpClient,
     public msg: NzMessageService,
-    public notification: NzNotificationService,
-   
+    public notification: NzNotificationService
   ) {
     this.form = fb.group({
       userName: ['iotmaster@iotsharp.net', [Validators.required]],
@@ -57,45 +54,48 @@ export class UserLoginComponent implements OnDestroy,OnInit {
   }
   ngOnInit(): void {
     this.controlInput = new ControlInput(
-      'api/Captcha/Index?clientid='+this.clientid,
-      'api/Captcha/Vertify?clientid='+this.clientid,
-      false,
+      'api/Captcha/Index?clientid=' + this.clientid,
+      'api/Captcha/Vertify?clientid=' + this.clientid,
+      false
     );
   }
   ngAfterViewInit(): void {
     localStorage.clear();
 
     this.http.get('api/installer/instance?_allow_anonymous=true').subscribe(
-      x => {
-        if (x.code === 10000) {
-          if (x.data.installed) {
+      {
+
+        next: next => {
+          if (next.code === 10000) {
+            if (next.data.installed) {
+            } else {
+              this.router.navigateByUrl('/passport/register?type=install');
+            }
           } else {
-            this.router.navigateByUrl('/passport/register?type=install');
+            this.notification.error('请求错误', 'Api请求不正确');
           }
-        } else {
-          this.notification.error('请求错误', 'Api请求不正确');
-        }
-      },
-      error => {
-        this.notification.error('请求错误', '系统异常');
-      },
-      () => {}
+        },
+        error: error => {
+          this.notification.error('请求错误', '系统异常');
+        },
+        complete: () => { }
+      }
     );
   }
 
   // #region fields
 
   get userName(): AbstractControl {
-    return this.form.controls.userName;
+    return this.form.controls['userName'];
   }
   get password(): AbstractControl {
-    return this.form.controls.password;
+    return this.form.controls['password'];
   }
   get mobile(): AbstractControl {
-    return this.form.controls.mobile;
+    return this.form.controls['mobile'];
   }
   get captcha(): AbstractControl {
-    return this.form.controls.captcha;
+    return this.form.controls['captcha'];
   }
   form: FormGroup;
 
@@ -111,14 +111,11 @@ export class UserLoginComponent implements OnDestroy,OnInit {
   switch({ index }: NzTabChangeEvent): void {
     this.type = index!;
   }
-  successMatch($event){
-    
-    this.isVertify=true;
-    this.isVisible=!this.isVertify
+  successMatch($event) {
+    this.isVertify = true;
+    this.isVisible = !this.isVertify;
 
-  
-       this.signIn($event.move);
-
+    this.signIn($event.move);
   }
   getCaptcha(): void {
     if (this.mobile.invalid) {
@@ -137,8 +134,7 @@ export class UserLoginComponent implements OnDestroy,OnInit {
 
   // #endregion
 
-
-  signIn(move:number){
+  signIn(move: number) {
     this.error = false;
     if (this.type === 0) {
       this.userName.markAsDirty();
@@ -165,56 +161,56 @@ export class UserLoginComponent implements OnDestroy,OnInit {
         type: this.type,
         userName: this.userName.value,
         password: this.password.value,
-        move:move
-
+        move: move
       })
       .subscribe(
-        x => {
-          if (x.code !== 10000) {
-            this.error = true;
-            this.cdr.detectChanges();
+        {
 
+          next: next => {
+            if (next.code !== 10000) {
+              this.error = true;
+              this.cdr.detectChanges();
 
-            return;
-          }
-          // 清空路由复用信息
-          this.reuseTabService.clear();
-          // 设置用户Token信息
-          // TODO: Mock expired value
-        var  expired = +new Date() + 1000 * x.data.token.expires_in
-          this.tokenService.set({
-            token: x.data.token.access_token,
-            Authorization: x.data.token.access_token,
-            expired: expired,
-            name: x.data.userName,
-            refreshtoken: x.data.token.refresh_token
-          }); 
-
-          this.settingsService.setUser({
-            token: x.data.token.access_token,
-            name: x.data.userName,
-            avatar: './assets/logo.png',
-            email: 'iotmaster@iotsharp.net'
-          });
-          // 重新获取 StartupService 内容，我们始终认为应用信息一般都会受当前用户授权范围而影响
-          this.startupSrv.load().subscribe(() => {
-            let url = this.tokenService.referrer!.url || '/';
-            if (url.includes('/passport')) {
-              url = '/';
+              return;
             }
-            this.router.navigateByUrl(url);
-          });
-        },
-        error => {
-          this.error = error.message;
-        },
-        () => {}
-      );
+            // 清空路由复用信息
+            this.reuseTabService.clear();
+            // 设置用户Token信息
+            // TODO: Mock expired value
+            var expired = +new Date() + 1000 * next.data.token.expires_in;
+            this.tokenService.set({
+              token: next.data.token.access_token,
+              Authorization: next.data.token.access_token,
+              expired: expired,
+              name: next.data.userName,
+              refreshtoken: next.data.token.refresh_token
+            });
 
+            this.settingsService.setUser({
+              token: next.data.token.access_token,
+              name: next.data.userName,
+              avatar: './assets/logo.png',
+              email: 'iotmaster@iotsharp.net'
+            });
+            // 重新获取 StartupService 内容，我们始终认为应用信息一般都会受当前用户授权范围而影响
+            this.startupSrv.load().subscribe(() => {
+              let url = this.tokenService.referrer!.url || '/';
+              if (url.includes('/passport')) {
+                url = '/';
+              }
+              this.router.navigateByUrl(url);
+            });
+          },
+          error: error => {
+            this.error = error.message;
+          },
+          complete: () => { }
+        }
+      );
   }
 
   submit(): void {
-   this.isVisible=true;
+    this.isVisible = true;
   }
 
   // #region social

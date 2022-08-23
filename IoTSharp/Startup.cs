@@ -44,6 +44,7 @@ using System.Text;
 using Jdenticon;
 using static Amazon.Internal.RegionEndpointProviderV2;
 using IoTSharp.Gateways;
+using System.Collections.Specialized;
 
 namespace IoTSharp
 {
@@ -59,6 +60,7 @@ namespace IoTSharp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            System.Text.Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var settings = Configuration.Get<AppSettings>();
             services.Configure((Action<AppSettings>)(setting =>
             {
@@ -101,7 +103,14 @@ namespace IoTSharp
                     break;
                 case DataBaseType.InMemory:
                     services.ConfigureInMemory(settings.DbContextPoolSize,  healthChecksUI);
-
+                    break;
+                case DataBaseType.Cassandra:
+                    services.ConfigureCassandra(Configuration.GetConnectionString("IoTSharp"), settings.DbContextPoolSize, healthChecks, healthChecksUI);
+                    if  (settings.TelemetryStorage== TelemetryStorage.Sharding)
+                    {
+                        settings.TelemetryStorage = TelemetryStorage.SingleTable;
+                        //使用Cassandra时候不支持分表
+                    }
                     break;
                 case DataBaseType.PostgreSql:
                 default:
@@ -212,12 +221,12 @@ namespace IoTSharp
                         break;
 
                     case CachingUseIn.LiteDB:
-                        options.UseLiteDB(cfg => cfg.DBConfig = new EasyCaching.LiteDB.LiteDBDBOptions() { }, name: "iotsharp");
+                        options.UseLiteDB(cfg => cfg.DBConfig = new EasyCaching.LiteDB.LiteDBDBOptions() { }, name: _hc_Caching);
                         break;
 
                     case CachingUseIn.InMemory:
                     default:
-                        options.UseInMemory("iotsharp");
+                        options.UseInMemory(_hc_Caching);
                         break;
                 }
             });
@@ -244,11 +253,11 @@ namespace IoTSharp
                             case DataBaseType.Sqlite:
                                 config.UseSQLiteToSharding(Configuration.GetConnectionString("TelemetryStorage"), settings.Sharding.ExpandByDateMode);
                                 break;
-
                             case DataBaseType.PostgreSql:
                             default:
                                 config.UseNpgsqlToSharding(Configuration.GetConnectionString("TelemetryStorage"), settings.Sharding.ExpandByDateMode);
                                 break;
+
                         }
                         config.SetEntityAssemblies(new Assembly[] { typeof(TelemetryData).Assembly });
                     });
@@ -266,7 +275,7 @@ namespace IoTSharp
                     services.AddSingleton<IStorage, InfluxDBStorage>();
                     //"TelemetryStorage": "http://localhost:8086/?org=iotsharp&bucket=iotsharp-bucket&token=iotsharp-token"
                     services.AddObjectPool(() => InfluxDBClientFactory.Create(Configuration.GetConnectionString("TelemetryStorage")));
-                    //healthChecks.AddInfluxDB(Configuration.GetConnectionString("TelemetryStorage"),name: _hc_telemetryStorage);
+                    healthChecks.AddInfluxDB(Configuration.GetConnectionString("TelemetryStorage"),name: _hc_telemetryStorage);
                     break;
 
                 case TelemetryStorage.PinusDB:
@@ -283,7 +292,15 @@ namespace IoTSharp
                 case TelemetryStorage.TimescaleDB:
                     services.AddSingleton<IStorage, TimescaleDBStorage>();
                     break;
-
+                case TelemetryStorage.IoTDB:
+                    var str = Configuration.GetConnectionString("TelemetryStorage");
+                    services.AddSingleton<IStorage, IoTDBStorage>();
+                    services.AddSingleton(s =>
+                    {
+                         return new Apache.IoTDB.Data.IoTDBConnection (str);
+                    });
+                    healthChecks.AddIoTDB(str);
+                    break;
                 case TelemetryStorage.SingleTable:
                 default:
                     services.AddSingleton<IStorage, EFStorage>();

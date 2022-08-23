@@ -242,7 +242,7 @@ namespace IoTSharp.Controllers
                 }
                 _context.Alarms.Update(alarm);
                 await _context.SaveChangesAsync();
-                return new ApiResult<bool>(ApiCode.CantFindObject, "Alarm acknowledged", true);
+                return new ApiResult<bool>(ApiCode.Success, "Alarm acknowledged", true);
 
             }
 
@@ -256,7 +256,6 @@ namespace IoTSharp.Controllers
         /// 清除告警信息
         /// </summary>
         /// <param name="m"></param>
-        /// <param name="id">告警Id</param>
         /// <returns></returns>
         [HttpPost]
         public async Task<ApiResult<bool>> ClearAlarm([FromBody] AlarmStatusDto m)
@@ -279,7 +278,7 @@ namespace IoTSharp.Controllers
                 }
                 _context.Alarms.Update(alarm);
                 await _context.SaveChangesAsync();
-                return new ApiResult<bool>(ApiCode.CantFindObject, "Alarm cleared", true);
+                return new ApiResult<bool>(ApiCode.Success, "Alarm cleared", true);
 
             }
             return new ApiResult<bool>(ApiCode.CantFindObject, "Not found alarm", false);
