@@ -18,9 +18,9 @@ using System.Threading.Tasks;
 using IoTSharp.Controllers.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using Silkier.AspNetCore;
-using Silkier.Extensions;
+
 using Jdenticon.AspNetCore;
+using IoTSharp.Contracts;
 
 namespace IoTSharp.Controllers
 {
@@ -38,17 +38,17 @@ namespace IoTSharp.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly TokenValidationParameters _tokenValidationParams;
+    
         public AccountController(
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
-            IConfiguration configuration, ILogger<AccountController> logger, ApplicationDbContext context, TokenValidationParameters tokenValidationParams,
+            IConfiguration configuration, ILogger<AccountController> logger, ApplicationDbContext context, 
             IOptions<AppSettings> options
             )
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _tokenValidationParams = tokenValidationParams;
+ 
             _configuration = configuration;
             _logger = logger;
             _context = context;
@@ -173,6 +173,7 @@ namespace IoTSharp.Controllers
             }
             var expires = DateTime.Now.AddHours(_settings.JwtExpireHours);
             var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Issuer = _configuration["JwtIssuer"],
@@ -212,6 +213,8 @@ namespace IoTSharp.Controllers
             var profile = this.GetUserProfile();
             try
             {
+
+
                 var storedRefreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == model.RefreshToken);
                 if (storedRefreshToken == null)
                 {
@@ -308,7 +311,7 @@ namespace IoTSharp.Controllers
                 {
                     await _signInManager.SignInAsync(user, false);
                     await _signInManager.UserManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, model.Email));
-                    var customer = await _context.Customer.Include(c => c.Tenant).FirstOrDefaultAsync(c => c.Email == model.Customer);
+                    var customer = await _context.Customer.Include(c => c.Tenant).AsSingleQuery().FirstOrDefaultAsync(c => c.Email == model.Customer);
                     if (customer != null)
                     {
                         await _signInManager.UserManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, model.Email));

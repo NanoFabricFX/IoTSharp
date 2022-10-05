@@ -1,4 +1,5 @@
-﻿using IoTSharp.Data;
+﻿using IoTSharp.Contracts;
+using IoTSharp.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,9 @@ namespace IoTSharp.Dtos
 
         public int Timeout { get; set; }
         public IdentityType IdentityType { get; set; }
+    }
+    public class DevicePostProduceDto
+    {
+        public string Name { get; set; }
     }
 }

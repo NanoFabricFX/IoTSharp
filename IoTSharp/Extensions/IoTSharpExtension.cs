@@ -1,8 +1,9 @@
-﻿using DotNetCore.CAP;
+﻿using IoTSharp.EventBus;
 using HealthChecks.UI.Configuration;
+using IoTSharp.Contracts;
 using IoTSharp.Data;
+using IoTSharp.Data.Extensions;
 using IoTSharp.Extensions;
-using IoTSharp.HealthChecks.Taos;
 using IoTSharp.Services;
 using IoTSharp.X509Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -19,7 +20,6 @@ using MQTTnet.Diagnostics;
 using NSwag;
 using NSwag.Generation.AspNetCore;
 using NSwag.Generation.Processors.Security;
-using Silkier.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -98,7 +98,7 @@ namespace IoTSharp
         /// <param name="custId"></param>
         /// <returns></returns>
         public static Customer GetCustomer(this ApplicationDbContext context, Guid custId) 
-            => context.Customer.Include(c => c.Tenant).FirstOrDefault(c => c.Id  ==  custId);
+            => context.Customer.Include(c => c.Tenant).AsSingleQuery().FirstOrDefault(c => c.Id  ==  custId);
       /// <summary>
       /// 获取指定的租户信息
       /// </summary>
@@ -130,7 +130,7 @@ namespace IoTSharp
         /// <returns></returns>
         public static Guid GetTenantId(this ClaimsPrincipal _user)
         {
-            return  Guid.Parse( _user.FindFirstValue(IoTSharpClaimTypes.Tenant));
+            return  Guid.Parse( _user.FindFirstValue(IoTSharpClaimTypes.Tenant)??Guid.Empty.ToString());
         }
         /// <summary>
         /// 获取当前用户的客户ID
@@ -320,7 +320,7 @@ namespace IoTSharp
                 if (devname != "me" && device.DeviceType == DeviceType.Gateway)
                 {
                     var ch = from g in _dbContext.Gateway.Include(g => g.Tenant).Include(g => g.Customer).Include(c => c.Children) where g.Id == device.Id select g;
-                    var gw = ch.FirstOrDefault();
+                    var gw = ch.AsSplitQuery().FirstOrDefault();
                     if(gw == null)
                     {//未处理null的情况
 

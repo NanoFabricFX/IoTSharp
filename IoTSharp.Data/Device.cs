@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IoTSharp.Contracts;
+using System;
 
 namespace IoTSharp.Data
 {
@@ -52,11 +53,12 @@ namespace IoTSharp.Data
         /// </summary>
         public Customer Customer { get; set; }
 
-        public int Status { get; set; }
-
-        public DeviceModel? DeviceModel { get; set; }
+        public DeviceStatus Status { get; set; }
+ 
         public Guid? DeviceModelId { get; set; }
 
         public DeviceIdentity DeviceIdentity { get; set; }
+
+ 
     }
 }

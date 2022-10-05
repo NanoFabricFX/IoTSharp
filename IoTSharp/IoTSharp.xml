@@ -4,54 +4,10 @@
         <name>IoTSharp</name>
     </assembly>
     <members>
-        <member name="P:IoTSharp.AppSettings.MqttBroker">
-            <summary>
-            Broker settings
-            </summary>
-        </member>
-        <member name="P:IoTSharp.AppSettings.MqttClient">
-            <summary>
-            mqtt client settings
-            </summary>
-        </member>
-        <member name="P:IoTSharp.MqttClientSetting.MqttBroker">
-            <summary>
-            built-in or IP、HostName
-            </summary>
-        </member>
         <member name="T:IoTSharp.Extensions.RpcClient">
             <summary>
             https://github.com/chkr1011/MQTTnet/blob/master/Source/MQTTnet.Extensions.Rpc/MqttRpcClient.cs
             </summary>
-        </member>
-        <member name="M:IoTSharp.Extensions.DataExtension.SaveAsync``1(IoTSharp.Data.ApplicationDbContext,System.Collections.Generic.Dictionary{System.String,System.Object},System.Guid,IoTSharp.Data.DataSide)">
-            <summary>
-            Save Data to Device's and <typeparamref name="L"/>
-            </summary>
-            <typeparam name="L">Latest</typeparam>
-            <param name="data"></param>
-            <param name="dataSide"></param>
-            <param name="deviceId"></param>
-            <param name="_context"></param>
-            <returns></returns>
-        </member>
-        <member name="M:IoTSharp.Extensions.DataExtension.PreparingData``1(IoTSharp.Data.ApplicationDbContext,System.Collections.Generic.Dictionary{System.String,System.Object},System.Guid,IoTSharp.Data.DataSide)">
-            <summary>
-            Preparing Data to Device's   <typeparamref name="L"/>
-            </summary>
-            <typeparam name="L"></typeparam>
-            <param name="_context"></param>
-            <param name="data"></param>
-            <param name="deviceId"></param>
-            <param name="dataSide"></param>
-            <returns></returns>
-        </member>
-        <member name="M:IoTSharp.Extensions.DeviceExtension.AfterCreateDevice(IoTSharp.Data.ApplicationDbContext,IoTSharp.Data.Device)">
-            <summary>
-            When creating a device, all the things that need to be done here are done
-            </summary>
-            <param name="_context"></param>
-            <param name="device"></param>
         </member>
         <member name="T:IoTSharp.Controllers.AccountController">
             <summary>
@@ -142,7 +98,7 @@
             告警管理
             </summary>
         </member>
-        <member name="M:IoTSharp.Controllers.AlarmController.Occurred(IoTSharp.Dtos.CreateAlarmDto)">
+        <member name="M:IoTSharp.Controllers.AlarmController.Occurred(IoTSharp.Contracts.CreateAlarmDto)">
             <summary>
             创建告警， 但不触发规则链。要触发规则链， 请使用设备相关的API
             </summary>
@@ -163,14 +119,14 @@
             <param name="m"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.AlarmController.AckAlarm(IoTSharp.Dtos.AlarmStatusDto)">
+        <member name="M:IoTSharp.Controllers.AlarmController.AckAlarm(IoTSharp.Contracts.AlarmStatusDto)">
             <summary>
             确认告警
             </summary>
             <param name="m"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.AlarmController.ClearAlarm(IoTSharp.Dtos.AlarmStatusDto)">
+        <member name="M:IoTSharp.Controllers.AlarmController.ClearAlarm(IoTSharp.Contracts.AlarmStatusDto)">
             <summary>
             清除告警信息
             </summary>
@@ -416,7 +372,7 @@
             <param name="telemetrys"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.DevicesController.Attributes(System.String,IoTSharp.Data.DataSide,System.String)">
+        <member name="M:IoTSharp.Controllers.DevicesController.Attributes(System.String,IoTSharp.Contracts.DataSide,System.String)">
              <summary>
              获取服务测的设备熟悉
              </summary>
@@ -433,7 +389,7 @@
             <param name="attributes">attributes</param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.DevicesController.Alarm(System.String,IoTSharp.Dtos.DeviceAlarmDto)">
+        <member name="M:IoTSharp.Controllers.DevicesController.Alarm(System.String,IoTSharp.Contracts.DeviceAlarmDto)">
             <summary>
             为网关的子设备或者普通设备上传告警信息
             </summary>
@@ -474,7 +430,7 @@
             <param name="attributes"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.DevicesController.RemoveAttribute(System.Guid,System.String,IoTSharp.Data.DataSide)">
+        <member name="M:IoTSharp.Controllers.DevicesController.RemoveAttribute(System.Guid,System.String,IoTSharp.Contracts.DataSide)">
             <summary>
             属性删除
             </summary>
@@ -676,111 +632,6 @@
             用户名密码
             </summary>
         </member>
-        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.OriginatorName">
-            <summary>
-            起因设备的名称或者GUID
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.AlarmType">
-            <summary>
-            警告类型
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.AlarmDetail">
-            <summary>
-            警告细节描述
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.DeviceAlarmDto.Serverity">
-            <summary>
-            严重成都
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.CreateAlarmDto.OriginatorType">
-            <summary>
-            起因设备类型
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.AlarmType">
-            <summary>
-            警告类型
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.AlarmDetail">
-            <summary>
-            警告细节描述
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.AckDateTime">
-            <summary>
-            警告创建时间
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.ClearDateTime">
-            <summary>
-            手动清除时间
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.StartDateTime">
-            <summary>
-            警告持续的开始时间
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.EndDateTime">
-            <summary>
-            结束时间， 当警告自动或者手动确实得到处理的时间
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.AlarmStatus">
-            <summary>
-            告警状态
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.Serverity">
-            <summary>
-            严重成都
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.Propagate">
-            <summary>
-            传播
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.OriginatorId">
-            <summary>
-            起因对象的Id
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AlarmDto.OriginatorType">
-            <summary>
-            起因设备类型
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AssetRelationDto.Name">
-            <summary>
-            列名
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AssetRelationDto.Description">
-            <summary>
-            描述
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AssetRelationDto.DeviceId">
-            <summary>
-            设备Id
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AssetRelationDto.DataCatalog">
-            <summary>
-            数据类型， 是遥测， 还是属性
-            </summary>
-        </member>
-        <member name="P:IoTSharp.Dtos.AssetRelationDto.KeyName">
-            <summary>
-            对应的键名称
-            </summary>
-        </member>
         <member name="P:IoTSharp.Dtos.DeviceDetailDto.Name">
             <summary>
             设备名称
@@ -896,11 +747,6 @@
             是否被安装
             </summary>
         </member>
-        <member name="F:IoTSharp.Dtos.TimespanConverterNewtonsoft.TimeSpanFormatString">
-            <summary>
-            Format: Days.Hours:Minutes:Seconds:Milliseconds
-            </summary>
-        </member>
         <member name="T:IoTSharp.Dtos.TelemetryDataQueryDto">
             <summary>
             查询历史遥测数据请求结构体
@@ -931,6 +777,11 @@
         <member name="P:IoTSharp.Dtos.TelemetryDataQueryDto.aggregate">
             <summary>
             数据截面计算方式， 
+            </summary>
+        </member>
+        <member name="F:IoTSharp.Dtos.TimespanConverterNewtonsoft.TimeSpanFormatString">
+            <summary>
+            Format: Days.Hours:Minutes:Seconds:Milliseconds
             </summary>
         </member>
         <member name="M:IoTSharp.IoTSharpExtension.JustFill``1(IoTSharp.Data.ApplicationDbContext,Microsoft.AspNetCore.Mvc.ControllerBase,``0)">
@@ -1038,7 +889,7 @@
             <param name="_logger"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.FlowRuleEngine.FlowRuleProcessor.RunFlowRules(System.Guid,System.Object,System.Guid,IoTSharp.Data.EventType,System.String)">
+        <member name="M:IoTSharp.FlowRuleEngine.FlowRuleProcessor.RunFlowRules(System.Guid,System.Object,System.Guid,IoTSharp.Contracts.EventType,System.String)">
              <summary>
             
              </summary>
@@ -1130,65 +981,9 @@
               查找类似 The certificate is installed 的本地化字符串。
             </summary>
         </member>
-        <member name="M:IoTSharp.Storage.InfluxDBStorage.LoadTelemetryAsync(System.Guid,System.String,System.DateTime,System.DateTime,System.TimeSpan,IoTSharp.Data.Aggregate)">
+        <member name="T:IoTSharp.Services.MQTTControllers.V1GatewayController">
             <summary>
-            加载遥测数据
-            </summary>
-            <param name="deviceId">设备ID</param>
-            <param name="keys">如果为空则全部 ， 否则都好分隔</param>
-            <param name="begin">时间开始</param>
-            <param name="end">结束</param>
-            <param name="every">数据堆叠断面时间</param>
-            <param name="aggregate">聚合方式</param>
-            <returns></returns>
-        </member>
-        <member name="M:IoTSharp.Storage.IoTDBStorage.SharpAggregate2IotDBAggregate(IoTSharp.Data.Aggregate)">
-            <summary>
-            将IotSharp中的聚合转换为IotDB中的聚合函数名称
-            </summary>
-            <param name="aggregate"></param>
-            <returns></returns>
-        </member>
-        <member name="M:IoTSharp.Storage.PinusDBStorage.SqlToTDD(PinusDB.Data.PinusConnection,System.String,System.Guid)">
-            <summary>
-            转换获取到的值
-            </summary>
-            <param name="db"></param>
-            <param name="sql"></param>
-            <param name="devid"></param>
-            <returns></returns>
-        </member>
-        <member name="T:IoTSharp.Storage.ShardingStorage">
-            <summary>
-            由于此模式目前无法通过EFCore.Sharding 进行Group By 获取最新遥测数据， 和Select  新对象， 所以， 最新遥测依然从DataStorage表里获取，历史从分表里获取
-            更多内容可以参考<seealso cref="!:https://github.com/Coldairarrow/EFCore.Sharding/issues/52"/>
-            </summary>
-        </member>
-        <member name="M:IoTSharp.Storage.TaosStorage.SqlToTDD(IoTSharp.Data.Taos.TaosConnection,System.String,System.String)">
-            <summary>
-            转换获取到的值
-            </summary>
-            <param name="db"></param>
-            <param name="sql"></param>
-            <param name="keyname"></param>
-            <returns></returns>
-            <exception cref="!:https://github.com/taosdata/TDengine/issues/4269">务必注意此bug</exception>
-        </member>
-        <member name="M:IoTSharp.Storage.TaosStorage.LoadTelemetryAsync(System.Guid,System.String,System.DateTime,System.DateTime,System.TimeSpan,IoTSharp.Data.Aggregate)">
-            <summary>
-            
-            </summary>
-            <param name="deviceId"></param>
-            <param name="keys"></param>
-            <param name="begin"></param>
-            <param name="end"></param>
-            <param name="every">未能支持</param>
-            <param name="aggregate">未能支持</param>
-            <returns></returns>
-        </member>
-        <member name="F:IoTSharp.Storage.TimescaleDBStorage._scopeFactor">
-            <summary>
-            解决单例注入问题 jy 
+            兼容thingsboard协议
             </summary>
         </member>
     </members>

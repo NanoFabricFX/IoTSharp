@@ -1,4 +1,5 @@
 ﻿using System;
+using IoTSharp.Contracts;
 using IoTSharp.Data;
 using IoTSharp.Dtos;
 
@@ -35,8 +36,6 @@ namespace IoTSharp.Models
         public DeviceType DeviceType { get; set; }
 
         public DateTime LastActive { get; set; }
-
-        public int Status { get; set; }
 
         public bool Online { get; set; }
 

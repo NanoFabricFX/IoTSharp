@@ -1,4 +1,5 @@
-﻿using IoTSharp.Data;
+﻿using IoTSharp.Contracts;
+using IoTSharp.Data;
 using IoTSharp.Dtos;
 using IoTSharp.Extensions;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +12,7 @@ namespace IoTSharp.Controllers
     /// <summary>
     /// this is test purpose
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/[controller]/[action]")]
     [ApiController]
     [Authorize]
     public class MenuController : ControllerBase
@@ -30,7 +31,7 @@ namespace IoTSharp.Controllers
             return new ApiResult<dynamic>(ApiCode.Success, "OK", null);
         }
 
-        [HttpGet("[action]")]
+        [HttpGet]
         public ApiResult<dynamic> GetProfile()
         {
             var profile = this.GetUserProfile();
