@@ -9,38 +9,14 @@ using System.Threading.Tasks;
 
 namespace IoTSharp.EventBus.Shashlik
 {
-    public class AttributeDataEvent : IEvent
+    public class AttributeDataEvent : ShashlikEvent<PlayloadData>
     {
-        public PlayloadData Data { get; set; }
-        public static implicit operator AttributeDataEvent(PlayloadData v)
-        {
-            return new AttributeDataEvent() { Data = v };
-        }
-
-        public static explicit operator PlayloadData(AttributeDataEvent v)
-        {
-            return v.Data;
-        }
     }
-    public class TelemetryDataEvent : IEvent
+    public class TelemetryDataEvent : ShashlikEvent<PlayloadData>
     {
-        public PlayloadData Data { get; set; }
 
-        public static implicit operator TelemetryDataEvent(PlayloadData v)
-        {
-            return new TelemetryDataEvent() { Data = v };
-        }
-
-        public static explicit operator PlayloadData(TelemetryDataEvent v)
-        {
-            return v.Data;
-        }
     }
-    public class DeviceStatusEvent : IEvent
-    {
-        public Guid DeviceId { get; set; }
-        public DeviceStatus DeviceStatus { get; set; }
-    }
+ 
     public class CreateDeviceEvent : IEvent
     {
         public Guid DeviceId { get; set; }
@@ -49,17 +25,14 @@ namespace IoTSharp.EventBus.Shashlik
     {
         public Guid DeviceId { get; set; }
     }
-    public class AlarmEvent : IEvent
+    public class AlarmEvent : ShashlikEvent<CreateAlarmDto>
     {
-        public CreateAlarmDto Data { get; set; }
-        public static implicit operator AlarmEvent(CreateAlarmDto v)
-        {
-            return new AlarmEvent() { Data = v };
-        }
+    }
+    public class DeviceActivityEvent : ShashlikEvent<DeviceActivityStatus>
+    {
+    }
+    public class DeviceConnectEvent : ShashlikEvent<DeviceConnectStatus>
+    {
 
-        public static explicit operator CreateAlarmDto(AlarmEvent v)
-        {
-            return v.Data;
-        }
     }
 }

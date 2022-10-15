@@ -35,9 +35,7 @@ namespace IoTSharp.Models
         public Guid Id { get; set; }
         public DeviceType DeviceType { get; set; }
 
-        public DateTime LastActive { get; set; }
 
-        public bool Online { get; set; }
 
         public int Timeout { get; set; }
 

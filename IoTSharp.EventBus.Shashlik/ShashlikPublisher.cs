@@ -14,10 +14,12 @@ namespace IoTSharp.EventBus.Shashlik
     public class ShashlikPublisher : IPublisher
     {
         private IEventPublisher _queue;
+        private IMessageStorage _storage;
 
-        public ShashlikPublisher(IEventPublisher queue)
+        public ShashlikPublisher(IEventPublisher queue, IMessageStorage storage)
         {
             _queue = queue;
+            _storage = storage;
         }
         public async Task PublishAttributeData(PlayloadData msg)
         {
@@ -27,13 +29,9 @@ namespace IoTSharp.EventBus.Shashlik
         public async Task PublishTelemetryData( PlayloadData msg)
         {
             await _queue.PublishAsync((TelemetryDataEvent)msg, null);
-            msg = (PlayloadData)(TelemetryDataEvent)msg;
         }
 
-        public async Task PublishDeviceStatus( Guid devid, DeviceStatus devicestatus)
-        {
-            await _queue.PublishAsync(new DeviceStatusEvent() { DeviceId = devid, DeviceStatus = devicestatus },null);
-        }
+     
 
         public async Task PublishDeviceAlarm( CreateAlarmDto alarmDto)
         {
@@ -48,6 +46,22 @@ namespace IoTSharp.EventBus.Shashlik
         public async Task PublishDeleteDevice(Guid devid)
         {
             await _queue.PublishAsync(new DeleteDeviceEvent() { DeviceId = devid }, null);
+        }
+
+        public async Task PublishConnect(Guid devid, ConnectStatus devicestatus)
+        {
+            await _queue.PublishAsync((DeviceConnectEvent)new DeviceConnectStatus(devid, devicestatus), null);
+        }
+
+        public async Task PublishActive(Guid devid, ActivityStatus activity)
+        {
+            await _queue.PublishAsync((DeviceActivityEvent)new DeviceActivityStatus(  devid, activity),null);
+        }
+
+        public async Task<EventBusMetrics> GetMetrics()
+        {
+            var stat = await _storage.GetReceivedMessageStatusCountAsync(CancellationToken.None);
+            return  new EventBusMetrics();
         }
     }
 }

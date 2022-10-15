@@ -96,18 +96,10 @@ namespace IoTSharp.Services
         {
             try
             {
-                var dev = args.SessionItems[nameof(Device)] as Device;  
+                var dev = args.SessionItems[nameof(Device)] as Device;
                 if (dev != null)
                 {
-                    using (var scope = _scopeFactor.CreateScope())
-                    using (var _dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>())
-                    {
-                        var devtmp = _dbContext.Device.FirstOrDefault(d => d.Id == dev.Id);
-                        devtmp.LastActive = DateTime.Now;
-                        devtmp.Online = false;
-                        await _dbContext.SaveChangesAsync();
-                        _logger.LogInformation($"Server_ClientDisconnected   ClientId:{args.ClientId} DisconnectType:{args.DisconnectType}  Device is {devtmp.Name}({devtmp.Id}) ");
-                    }
+                    await _queue.PublishConnect(dev.Id, ConnectStatus.Disconnected);
                 }
                 else
                 {
@@ -175,10 +167,17 @@ namespace IoTSharp.Services
                     }
                     else
                     {
-                        _logger.LogInformation($"ClientId={obj.ClientId},Endpoint={obj.Endpoint},Username={obj.UserName}，Password={obj.Password}");
+                        string _thumbprint = string.Empty ;
+                        if (_settings.MqttBroker.EnableTls)
+                        {
+                            _thumbprint = e.ClientCertificate?.Thumbprint;
+                        }
+                            _logger.LogInformation($"ClientId={obj.ClientId},Endpoint={obj.Endpoint},Username={obj.UserName}，Password={obj.Password}");
                         var mcr = _dbContextcv.DeviceIdentities.Include(d => d.Device).AsSplitQuery().FirstOrDefault(mc =>
-                                              mc.IdentityType == IdentityType.AccessToken && mc.IdentityId == obj.UserName ||
-                                              mc.IdentityType == IdentityType.DevicePassword && mc.IdentityId == obj.UserName && mc.IdentityValue == obj.Password);
+                                              (mc.IdentityType == IdentityType.AccessToken && mc.IdentityId == obj.UserName) ||
+                                             ( mc.IdentityType == IdentityType.X509Certificate &&  mc.IdentityId == _thumbprint ) ||
+                                             ( mc.IdentityType == IdentityType.DevicePassword && mc.IdentityId == obj.UserName && mc.IdentityValue == obj.Password)
+                                             );
                         if (mcr != null)
                         {
                             try
@@ -186,7 +185,7 @@ namespace IoTSharp.Services
                                 var device = mcr.Device;
                                 e.SessionItems.Add(nameof(Device), device);
                                 e.ReasonCode = MQTTnet.Protocol.MqttConnectReasonCode.Success;
-                                _queue.PublishDeviceStatus(device.Id, DeviceStatus.Good);
+                                _queue.PublishConnect(device.Id, ConnectStatus.Connected);
                                 _logger.LogInformation($"Device {device.Name}({device.Id}) is online !username is {obj.UserName} and  is endpoint{obj.Endpoint}");
                             }
                             catch (Exception ex)
@@ -200,21 +199,21 @@ namespace IoTSharp.Services
                             var ak = _dbContextcv.AuthorizedKeys.Include(ak => ak.Customer).Include(ak => ak.Tenant).Include(ak => ak.Devices).AsSplitQuery().FirstOrDefault(ak => ak.AuthToken == obj.Password);
                             if (ak != null && !ak.Devices.Any(dev => dev.Name == obj.UserName))
                             {
-                                var devvalue = new Device() { Name = obj.UserName, DeviceType = DeviceType.Device, Timeout = 300, LastActive = DateTime.Now };
+                                var devvalue = new Device() { Name = obj.UserName, DeviceType = DeviceType.Device, Timeout = 300 };
                                 devvalue.Tenant = ak.Tenant;
                                 devvalue.Customer = ak.Customer;
                                 _dbContextcv.Device.Add(devvalue);
                                 ak.Devices.Add(devvalue);
                                 _dbContextcv.AfterCreateDevice(devvalue, obj.UserName, obj.Password);
                                 _dbContextcv.SaveChanges();
-                                _queue.PublishDeviceStatus(devvalue.Id, DeviceStatus.Good);
+                                _queue.PublishConnect(devvalue.Id,  ConnectStatus.Connected);
                             }
                             var mcp = _dbContextcv.DeviceIdentities.Include(d => d.Device).AsSingleQuery().FirstOrDefault(mc => mc.IdentityType == IdentityType.DevicePassword && mc.IdentityId == obj.UserName && mc.IdentityValue == obj.Password);
                             if (mcp != null)
                             {
                                 e.SessionItems.Add(nameof(Device), mcp.Device);
                                 e.ReasonCode = MQTTnet.Protocol.MqttConnectReasonCode.Success;
-                                _queue.PublishDeviceStatus(mcp.Device.Id, DeviceStatus.Good);
+                                _queue.PublishConnect(mcp.Device.Id, ConnectStatus.Disconnected);
                                 _logger.LogInformation($"Device {mcp.Device.Name}({mcp.Device.Id}) is online !username is {obj.UserName} and  is endpoint{obj.Endpoint}");
                             }
                             else

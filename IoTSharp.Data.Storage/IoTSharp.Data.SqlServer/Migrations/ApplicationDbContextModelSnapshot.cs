@@ -588,29 +588,23 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("bit");
+
                     b.Property<Guid?>("DeviceModelId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("DeviceType")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("LastActive")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Online")
-                        .HasColumnType("bit");
 
                     b.Property<Guid?>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ProduceId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
@@ -623,8 +617,6 @@ namespace IoTSharp.Data.SqlServer.Migrations
                     b.HasIndex("AuthorizedKeyId");
 
                     b.HasIndex("CustomerId");
-
-                    b.HasIndex("DeviceModelId");
 
                     b.HasIndex("OwnerId");
 
@@ -2209,10 +2201,6 @@ namespace IoTSharp.Data.SqlServer.Migrations
                         .WithMany("Devices")
                         .HasForeignKey("CustomerId");
 
-                    b.HasOne("IoTSharp.Data.DeviceModel", "DeviceModel")
-                        .WithMany()
-                        .HasForeignKey("DeviceModelId");
-
                     b.HasOne("IoTSharp.Data.Gateway", "Owner")
                         .WithMany("Children")
                         .HasForeignKey("OwnerId");
@@ -2226,8 +2214,6 @@ namespace IoTSharp.Data.SqlServer.Migrations
                         .HasForeignKey("TenantId");
 
                     b.Navigation("Customer");
-
-                    b.Navigation("DeviceModel");
 
                     b.Navigation("Owner");
 

@@ -27,7 +27,7 @@ namespace IoTSharp.Contracts
         NothingToDo = 10007,
         DoNotAllow = 10008,
         NotFoundTenant = 10009,
-        NotFoundDeviceIdentity = 10010,
+        ExceptionDeviceIdentity = 10010,
         RPCFailed = 10011,
         RPCTimeout = 10012,
         CustomerDoesNotHaveDevice = 10013,
@@ -40,18 +40,34 @@ namespace IoTSharp.Contracts
         Empty = 10019,
     }
 
+ 
+
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum DeviceStatus
+    public enum ConnectStatus
     {
-        Deleted=-1,
-        UnKnow = 0,
-        Good = 1,
-        PartGood = 2,
-        Bad = 3
-  
+        /// <summary>
+        /// 已断开
+        /// </summary>
+        Disconnected = 0,
+        /// <summary>
+        /// 已连接
+        /// </summary>
+        Connected =1
     }
-
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum ActivityStatus
+    {
+        /// <summary>
+        /// 非活动
+        /// </summary>
+        Inactivity = 0,
+        /// <summary>
+        /// 活跃
+        /// </summary>
+        Activity = 1
+    }
 
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
@@ -136,6 +152,9 @@ namespace IoTSharp.Contracts
         Device = 0,
         Gateway = 1
     }
+
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum GatewayType
     {
         Unknow=0,
@@ -161,20 +180,24 @@ namespace IoTSharp.Contracts
         RuleNode,
         RuleSwitcher
     }
-
+    /// <summary>
+    /// 原来的事件 ， 现在改为 流程规则运行类型。 
+    /// </summary>
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum EventType
+    public enum FlowRuleRunType
     {
         Normal=1,
         TestPurpose=2
     }
-
-    
+    /// <summary>
+    /// 原来的挂载点， 现在叫事件类型
+    /// </summary>
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum MountType
+    public enum EventType
     {
+        None=-1,
         /// <summary>
         /// 原始数据
         /// </summary>
@@ -194,11 +217,11 @@ namespace IoTSharp.Contracts
         /// <summary>
         /// 在线
         /// </summary>
-        Online = 4,
+        Connected = 4,
         /// <summary>
         /// 离线
         /// </summary>
-        Offline = 5,
+        Disconnected = 5,
         /// <summary>
         /// 遥测数据， key value type datetime 
         /// </summary>
@@ -209,9 +232,17 @@ namespace IoTSharp.Contracts
         Alarm = 7,
         DeleteDevice = 8,
         CreateDevice = 9,
+        /// <summary>
+        /// 活动事件
+        /// </summary>
+        Activity = 10,
+        /// <summary>
+        /// 非活跃状态
+        /// </summary>
+        Inactivity = 11
     }
     /// <summary>
-    /// 折叠数据
+    /// 聚合数据
     /// </summary>
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
@@ -250,6 +281,9 @@ namespace IoTSharp.Contracts
         /// </summary>
         Sum
     }
+    /// <summary>
+    /// 告警状态
+    /// </summary>
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]
     public enum AlarmStatus

@@ -87,7 +87,19 @@ namespace IoTSharp.Controllers
                                         {
                                         new { text = "用户列表", i18n = "", link = "/iot/settings/userlist" }
                                     }
-                                }, new
+                                },
+
+                                new
+                                {
+                                    text = "产品管理",
+                                    i18n = "",
+                                    icon = "medicinebox",
+                                    children = new[]
+                                    {
+                                        new { text = "产品列表", i18n = "", link = "/iot/produce/producelist" }
+                                    }
+                                },
+                                new
                                 {
                                     text = "设备管理",
                                     i18n = "",
@@ -169,7 +181,7 @@ namespace IoTSharp.Controllers
                         //"warning"
                     }, // 用户首页模块
                     Email = this.User.GetEmail(),
-                    Comstomer = User.GetCustomerId(),
+                    Customer = User.GetCustomerId(),
                     Tenant = User.GetTenantId(),
                     Logo = ""
                 };
@@ -290,7 +302,7 @@ namespace IoTSharp.Controllers
                         //"warning"
                     }, // 用户首页模块
                     Email = profile.Email.FirstOrDefault(),
-                    Comstomer = profile.Comstomer,
+                    Customer = profile.Customer,
                     Tenant = profile.Tenant,
                     Logo = ""
                 }

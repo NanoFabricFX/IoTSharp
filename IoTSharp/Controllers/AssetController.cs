@@ -36,7 +36,7 @@ namespace IoTSharp.Controllers
         {
             var profile = this.GetUserProfile();
             Expression<Func<Asset, bool>> condition = x =>
-                x.Customer.Id == profile.Comstomer && x.Tenant.Id == profile.Tenant;
+                x.Customer.Id == profile.Customer && x.Tenant.Id == profile.Tenant;
 
 
             if (!string.IsNullOrEmpty(m.Name))
@@ -74,7 +74,7 @@ namespace IoTSharp.Controllers
 
             var result = _context.Assets.Include(c => c.OwnedAssets).AsSingleQuery()
                 .SingleOrDefault(x =>
-                    x.Id == assetid && x.Customer.Id == profile.Comstomer && x.Tenant.Id == profile.Tenant)?.OwnedAssets
+                    x.Id == assetid && x.Customer.Id == profile.Customer && x.Tenant.Id == profile.Tenant)?.OwnedAssets
                 .ToList().GroupBy(c => c.DeviceId).Select(c => new
                     {
                         Device = c.Key,
@@ -85,8 +85,6 @@ namespace IoTSharp.Controllers
                 {
                     Id = x.Device,
                     Name = y.Name,
-                    Online = y.Online,
-                    LastActive = y.LastActive,
                     DeviceIdentity = y.DeviceIdentity,
                     DeviceType = y.DeviceType,
                     Timeout = y.Timeout,
@@ -114,7 +112,7 @@ namespace IoTSharp.Controllers
         {
             var profile = this.GetUserProfile();
             var asset = await _context.Assets.Include(c => c.Customer).Include(c => c.Tenant).AsSingleQuery().SingleOrDefaultAsync(c =>
-                c.Id == id && c.Customer.Id == profile.Comstomer && c.Tenant.Id == profile.Tenant);
+                c.Id == id && c.Customer.Id == profile.Customer && c.Tenant.Id == profile.Tenant);
             if (asset != null)
             {
                 return new ApiResult<AssetDto>(ApiCode.Success, "OK",
@@ -137,7 +135,7 @@ namespace IoTSharp.Controllers
 
             var profile = this.GetUserProfile();
             var asset = await _context.Assets.Include(c => c.Customer).Include(c => c.Tenant).AsSingleQuery().SingleOrDefaultAsync(c =>
-                c.Id == dto.Id && c.Customer.Id == profile.Comstomer && c.Tenant.Id == profile.Tenant);
+                c.Id == dto.Id && c.Customer.Id == profile.Customer && c.Tenant.Id == profile.Tenant);
             if (asset == null)
             {
 
@@ -172,7 +170,7 @@ namespace IoTSharp.Controllers
                 var profile = this.GetUserProfile();
                 Asset asset = new Asset();
                 asset.Tenant = _context.Tenant.SingleOrDefault(c => c.Id == profile.Tenant);
-                asset.Customer = _context.Customer.SingleOrDefault(c => c.Id == profile.Comstomer);
+                asset.Customer = _context.Customer.SingleOrDefault(c => c.Id == profile.Customer);
                 asset.AssetType = dto.AssetType;
                 asset.Name = dto.Name;
                 asset.Description = dto.Description;
@@ -198,7 +196,7 @@ namespace IoTSharp.Controllers
             {
                 var asset = await _context.Assets.Include(c => c.Customer).Include(c => c.Tenant)
                     .Include(c => c.OwnedAssets).AsSingleQuery().SingleOrDefaultAsync(c =>
-                        c.Id == id && c.Customer.Id == profile.Comstomer && c.Tenant.Id == profile.Tenant);
+                        c.Id == id && c.Customer.Id == profile.Customer && c.Tenant.Id == profile.Tenant);
                 if (asset == null)
                 {
 
@@ -227,7 +225,7 @@ namespace IoTSharp.Controllers
             {
                 var asset = await _context.Assets.Include(c => c.Customer).Include(c => c.Tenant)
                     .Include(c => c.OwnedAssets).AsSingleQuery().SingleOrDefaultAsync(c =>
-                        c.Id == m.AssetId && c.Customer.Id == profile.Comstomer && c.Tenant.Id == profile.Tenant);
+                        c.Id == m.AssetId && c.Customer.Id == profile.Customer && c.Tenant.Id == profile.Tenant);
                 if (asset == null)
                 {
 
@@ -289,7 +287,7 @@ namespace IoTSharp.Controllers
             {
                 var asset = await _context.Assets.Include(c => c.Customer).Include(c => c.Tenant)
                     .Include(c => c.OwnedAssets).AsSingleQuery().SingleOrDefaultAsync(c =>
-                        c.Id == m.AssetId && c.Customer.Id == profile.Comstomer && c.Tenant.Id == profile.Tenant);
+                        c.Id == m.AssetId && c.Customer.Id == profile.Customer && c.Tenant.Id == profile.Tenant);
 
                 await _context.SaveChangesAsync();
                 return new ApiResult<bool>(ApiCode.Success, "Ok", true);

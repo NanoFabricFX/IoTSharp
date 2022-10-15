@@ -1,4 +1,5 @@
-﻿using DotNetCore.CAP;
+﻿using Amazon.Runtime.Internal.Transform;
+using DotNetCore.CAP;
 using EasyCaching.Core;
 using IoTSharp.Contracts;
 using IoTSharp.Data;
@@ -40,11 +41,7 @@ namespace IoTSharp.EventBus.CAP
         }
 
 
-        [CapSubscribe("iotsharp.services.datastream.devicestatus")]
-        public async Task devicestatus(PlayloadData status)
-        {
-            await DeviceStatusEvent(status);
-        }
+  
 
         [CapSubscribe("iotsharp.services.datastream.telemetrydata")]
         public async Task telemetrydata(PlayloadData msg)
@@ -60,6 +57,17 @@ namespace IoTSharp.EventBus.CAP
         public async Task createdevice(Guid deviceId)
         {
             await CreateDevice(deviceId);
+        }
+        [CapSubscribe("iotsharp.services.platform.connect")]
+        public async Task connect( DeviceConnectStatus status)
+        {
+            await Connect(status.DeviceId, status.ConnectStatus);
+        }
+
+        [CapSubscribe("iotsharp.services.platform.active")]
+        public async Task active(DeviceActivityStatus status)
+        {
+            await base.Active(status.DeviceId, status.Activity);
         }
     }
 }
