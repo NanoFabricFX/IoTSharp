@@ -44,14 +44,14 @@ namespace IoTSharp.Controllers
         [ProducesDefaultResponseType]
         public async Task<ApiResult<List<Customer>>> GetAllCustomers([FromRoute] Guid tenantId)
         {
-            return new ApiResult<List<Customer>>(ApiCode.Success, "OK", await _context.Customer.Where(c => c.Tenant.Id == tenantId).ToListAsync());
+            return new ApiResult<List<Customer>>(ApiCode.Success, "OK", await _context.Customer.Where(c => c.Tenant.Id == tenantId && c.Deleted==false).ToListAsync());
         }
 
         /// <summary>
         /// 获取指定租户下的所有客户
         /// </summary>
         /// <returns></returns>
-        [HttpPost("Tenant/{tenantId}")]
+        [HttpPost("Tenant")]
         [Authorize(Roles = nameof(UserRole.NormalUser))]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResult), StatusCodes.Status404NotFound)]
@@ -59,12 +59,9 @@ namespace IoTSharp.Controllers
         public async Task<ApiResult<PagedData<Customer>>> GetCustomers([FromBody] CustomerParam m)
         {
             var profile = this.GetUserProfile();
-            Expression<Func<Customer, bool>> condition = x => x.Tenant.Id == profile.Tenant;
-            return new ApiResult<PagedData<Customer>>(ApiCode.Success, "OK", new PagedData<Customer>
-            {
-                total = await _context.Customer.CountAsync(condition),
-                rows = await _context.Customer.OrderByDescending(c => c.Id).Where(condition).Skip((m.offset) * m.limit).Take(m.limit).ToListAsync()
-            });
+            var querym = _context.Customer.Where(c => c.Deleted == false);
+            var data = await m.Query(querym, c => c.Name);
+            return new ApiResult<PagedData<Customer>>(ApiCode.Success, "OK", data);
         }
 
         /// <summary>
@@ -172,7 +169,8 @@ namespace IoTSharp.Controllers
             {
                 return new ApiResult<Customer>(ApiCode.NotFoundCustomer, "This customer was not found", null);
             }
-            _context.Customer.Remove(customer);
+            customer.Deleted = true;
+            _context.Customer.Update(customer);
             await _context.SaveChangesAsync();
             return new ApiResult<Customer>(ApiCode.Success, "Ok", customer);
         }

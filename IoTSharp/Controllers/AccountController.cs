@@ -21,6 +21,8 @@ using Microsoft.Extensions.Options;
 
 using Jdenticon.AspNetCore;
 using IoTSharp.Contracts;
+using InfluxDB.Client.Api.Domain;
+using IoTSharp.Models;
 
 namespace IoTSharp.Controllers
 {
@@ -30,7 +32,7 @@ namespace IoTSharp.Controllers
     [ApiController]
     [Authorize]
     [Route("api/[controller]/[action]")]
-    public class AccountController : ControllerBase
+    public partial class AccountController : ControllerBase
     {
         private ApplicationDbContext _context;
         private readonly AppSettings _settings;
@@ -38,7 +40,15 @@ namespace IoTSharp.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly SignInManager<IdentityUser> _signInManager;
-    
+        /// <summary>
+        /// 用户管理
+        /// </summary>
+        /// <param name="userManager"></param>
+        /// <param name="signInManager"></param>
+        /// <param name="configuration"></param>
+        /// <param name="logger"></param>
+        /// <param name="context"></param>
+        /// <param name="options"></param>
         public AccountController(
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
@@ -54,7 +64,10 @@ namespace IoTSharp.Controllers
             _context = context;
             _settings = options.Value;
         }
-
+        /// <summary>
+        /// 获取当前用户的头像， 基于邮箱生成
+        /// </summary>
+        /// <returns></returns>
         [HttpGet, AllowAnonymous]
         public async Task<IActionResult> Avatar()
         {
@@ -86,7 +99,7 @@ namespace IoTSharp.Controllers
             var uidto = new UserInfoDto()
             {
                 Code = ApiCode.Success,
-                Roles = string.Join(',', rooles).ToLower().Contains("admin") ? "admin" : "admin",//TODO: Permission control
+                Roles = string.Join(',', rooles).ToLower(),
                 Name = user.UserName,
                 Email = user.Email,
                 Avatar = user.Gravatar(),
@@ -354,11 +367,11 @@ namespace IoTSharp.Controllers
         public async Task<ApiResult<LoginResult>> Create([FromBody] InstallDto model)
         {
 
-            var tenant = _context.Tenant.FirstOrDefault(t => t.EMail == model.TenantEMail);
-            var customer = _context.Customer.FirstOrDefault(t => t.Email == model.CustomerEMail);
+            var tenant = _context.Tenant.FirstOrDefault(t => t.Email == model.TenantEMail && t.Deleted==false);
+            var customer = _context.Customer.FirstOrDefault(t => t.Email == model.CustomerEMail && t.Deleted == false);
             if (tenant == null && customer == null)
             {
-                tenant = new Tenant() { Id = Guid.NewGuid(), Name = model.TenantName, EMail = model.TenantEMail };
+                tenant = new Tenant() { Id = Guid.NewGuid(), Name = model.TenantName, Email = model.TenantEMail };
                 customer = new Customer() { Id = Guid.NewGuid(), Name = model.CustomerName, Email = model.CustomerEMail };
                 customer.Tenant = tenant;
                 tenant.Customers = new List<Customer>();
@@ -387,48 +400,104 @@ namespace IoTSharp.Controllers
                     await _signInManager.UserManager.AddToRoleAsync(user, nameof(UserRole.NormalUser));
                     await _signInManager.UserManager.AddToRoleAsync(user, nameof(UserRole.CustomerAdmin));
                     await _signInManager.UserManager.AddToRoleAsync(user, nameof(UserRole.TenantAdmin));
-                    return new ApiResult<LoginResult>(ApiCode.Success, "注册成功", null);
+                    _context.Relationship.Add(new Relationship
+                    {
+                        IdentityUser = _context.Users.Find(user.Id),
+                        Customer = _context.Customer.Find(customer.Id),
+                        Tenant = _context.Tenant.Find(tenant.Id)
+                    });
+                    await _context.SaveChangesAsync();
+                    return new ApiResult<LoginResult>(ApiCode.Success, "OK", null);
                 }
                 else
                 {
                     throw new Exception(string.Join(',', result.Errors.ToList().Select(ie => $"code={ie.Code},msg={ie.Description}")));
                 }
             }
-            var rship = new Relationship
+            else
             {
-                IdentityUser = _context.Users.Find(user.Id),
-                Customer = _context.Customer.Find(customer.Id),
-                Tenant = _context.Tenant.Find(tenant.Id)
-            };
-            _context.Add(rship);
-            await _context.SaveChangesAsync();
-            return new ApiResult<LoginResult>(ApiCode.InValidData, "", null);
+                return new ApiResult<LoginResult>(ApiCode.UserAlreadyExists, "The user already exists", null);
+            }
+           
+            
         }
         /// <summary>
-        /// 返回客户所属用户列表
+        /// 注册新的租户，客户，以及用户
         /// </summary>
-        /// <param name="customerId"></param>
-        /// <returns></returns>
-        [HttpGet("{customerId}")]
-        public async Task<ApiResult<List<UserItemDto>>> All(Guid customerId)
+        /// <param name="model"></param>
+        /// <returns >返回登录结果</returns>
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<ApiResult<LoginResult>> CreateUser([FromBody] CreateUserDto model)
         {
-            List<UserItemDto> dtos = new List<UserItemDto>();
-            var users = await _userManager.GetUsersForClaimAsync(_signInManager.Context.User.FindFirst(m => m.Type == IoTSharpClaimTypes.Customer && m.Value == customerId.ToString()));
-            users.ToList().ForEach(c =>
+            var customer = await _context.Customer.Include(c => c.Tenant).FirstOrDefaultAsync(c => c.Id == model.Customer);
+            if (customer != null && customer.Tenant!=null)
             {
-                var uid = new UserItemDto()
+                var tid = customer.Tenant.Id;
+                IdentityUser user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
                 {
-                    Id = c.Id,
-                    Email = c.Email,
-                    Roles = new List<string>(_userManager.GetRolesAsync(c).Result),
-                    PhoneNumber = c.PhoneNumber,
-                    AccessFailedCount = c.AccessFailedCount
-                };
-                dtos.Add(uid);
+                    user = new IdentityUser
+                    {
+                        Email = model.Email,
+                        UserName = model.Email,
+                        PhoneNumber = model.PhoneNumber
+                    };
+                    var result = await _userManager.CreateAsync(user, model.Password);
+                    if (result.Succeeded)
+                    {
+                        await _signInManager.SignInAsync(user, false);
+                        await _signInManager.UserManager.AddClaimAsync(user, new Claim(ClaimTypes.Email, model.Email));
+                        await _signInManager.UserManager.AddClaimAsync(user, new Claim(IoTSharpClaimTypes.Customer, model.Customer.ToString()));
+                        await _signInManager.UserManager.AddClaimAsync(user, new Claim(IoTSharpClaimTypes.Tenant, tid.ToString()));
+                        await _signInManager.UserManager.AddToRoleAsync(user, nameof(UserRole.NormalUser));
+                        var rship = new Relationship
+                        {
+                            IdentityUser = _context.Users.Find(user.Id),
+                            Customer = _context.Customer.Find(model.Customer),
+                            Tenant = _context.Tenant.Find(tid)
+                        };
+                        _context.Add(rship);
+                        await _context.SaveChangesAsync();
+                        return new ApiResult<LoginResult>(ApiCode.Success, "OK", null);
+                    }
+                    else
+                    {
+                        throw new Exception(string.Join(',', result.Errors.ToList().Select(ie => $"code={ie.Code},msg={ie.Description}")));
+                    }
+                }
+                else
+                {
+                    return new ApiResult<LoginResult>(ApiCode.UserAlreadyExists, "用户已存在", null);
+                }
+            }
+            else
+            {
+                return new ApiResult<LoginResult>(ApiCode.NotFoundCustomer, "未找到客户", null);
+            }
+        }
+
+        /// <summary>
+        /// 列出指定租户的所有用户。
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
+        public async Task<ApiResult<PagedData<UserItemDto>>> List([FromQuery] UserQueryDto m)
+        {
+            var mx = m.CustomerId.ToString();
+            var users = await _userManager.GetUsersForClaimAsync(_signInManager.Context.User.FindFirst(m => m.Type == IoTSharpClaimTypes.Customer && m.Value == mx));
+            var uid = users.Select(u => u.Id).ToList();
+            var data = await m.Query(_context.Users, c => uid.Contains(c.Id), c => c.UserName, c => new UserItemDto()
+            {
+                Id = c.Id,
+                UserName = c.UserName,
+                Email = c.Email,
+                PhoneNumber = c.PhoneNumber,
+                AccessFailedCount = c.AccessFailedCount,
+                LockoutEnabled= c.LockoutEnabled,
+                LockoutEnd=  c.LockoutEnd
             });
-
-            return new ApiResult<List<UserItemDto>>(ApiCode.InValidData, "", dtos);
-
+            return new ApiResult<PagedData<UserItemDto>>(ApiCode.Success, "OK", data);
         }
 
 
@@ -440,8 +509,6 @@ namespace IoTSharp.Controllers
         [HttpGet]
         public async Task<ApiResult<UserItemDto>> Get(String Id)
         {
-
-
             var user = await _userManager.FindByIdAsync(Id);
             if (user != null)
             {
@@ -454,7 +521,91 @@ namespace IoTSharp.Controllers
 
 
 
+        /// <summary>
+        /// 锁定用户 
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns>
+        /// UserAlreadyExists = 10020,
+        /// NotFoundUser = 10021,
+        /// CanNotLockUser = 10022,
+        ///LockUserHaveError = 10023
+        ///</returns>
+        [HttpPut]
+        public async Task<ApiResult> Lock(LockDto dto)
+        {
+            var result = new ApiResult();
+            var user = await _userManager.FindByIdAsync(dto.Id.ToString());
+            if (user != null)
+            {
+                var les = await _userManager.GetLockoutEnabledAsync(user);
+                switch (dto.Opt)
+                {
+                    case LockOpt.Status:
+                        result = new ApiResult(ApiCode.Success, $"{les}");
+                        break;
+                    case LockOpt.Lock:
+                        var   lce = await _userManager.SetLockoutEnabledAsync(user, true);
+                        if (lce.Succeeded)
+                        {
+                            var led = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.Now.AddYears(100));
+                            if (led.Succeeded)
+                            {
+                                result= new ApiResult(ApiCode.Success, "OK");
+                            }
+                            else
+                            {
+                                result= new ApiResult(ApiCode.LockUserHaveError, "锁定用户时遇到错误" + string.Join(';', led.Errors.Select(c => $"{c.Code}-{c.Description}")));
+                            }
+                        }
+                        else
+                        {
+                            result= new ApiResult(ApiCode.CanNotLockUser, "无法锁定此用户" + string.Join(';', lce.Errors.Select(c => $"{c.Code}-{c.Description}"))); 
+                        }
+               
+                        break;
+                    case LockOpt.Unlock:
+                        if (les)
+                        {
+                            var led = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.Now);
+                         
+                            if (led.Succeeded)
+                            {
+                                var uld = await _userManager.SetLockoutEnabledAsync(user, false);
+                                if (uld.Succeeded)
+                                {
 
+                                    result = new ApiResult(ApiCode.Success, "OK");
+                                }
+                                else
+                                {
+                                    result = new ApiResult(ApiCode.LockUserHaveError, "解锁用户时遇到错误" + string.Join(';', uld.Errors.Select(c => $"{c.Code}-{c.Description}")));
+                                }
+                            }
+                            else
+                            {
+                                result = new ApiResult(ApiCode.UnLockUserHaveError, "解锁用户时遇到错误" + string.Join(';', led.Errors.Select(c => $"{c.Code}-{c.Description}")));
+                            }
+                        }
+                        else
+                        {
+                            result = new ApiResult(ApiCode.CanNotUnLockUser, "无法解锁此用户");
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                result= new ApiResult(ApiCode.NotFoundUser, "未找到此用户"); 
+            }
+
+            return result;
+
+        }
+     
+ 
         /// <summary>
         /// 修改用户信息
         /// </summary>
@@ -480,7 +631,6 @@ namespace IoTSharp.Controllers
         {
 
             var cuser = await _userManager.GetUserAsync(User);
-
             cuser.PhoneNumber = user.PhoneNumber;
             var result = await _userManager.UpdateAsync(cuser);
             return new ApiResult<bool>(ApiCode.Success, "Ok", result.Succeeded);
@@ -511,8 +661,6 @@ namespace IoTSharp.Controllers
                     return new ApiResult<bool>(ApiCode.InValidData, result.Errors.Aggregate("", (x, y) => x + y.Description + "\n\r"), false);
                 }
                 return new ApiResult<bool>(ApiCode.InValidData, "Repeat password must be equal new password", false);
-
-
             }
             return new ApiResult<bool>(ApiCode.InValidData, "password length must great than six character", false);
         }
@@ -530,11 +678,11 @@ namespace IoTSharp.Controllers
                 switch (type)
                 {
                     case 1:
-                        return new ApiResult<bool>(ApiCode.Success, "OK", _context.Tenant.Any(c => c.EMail.ToLower() == email.ToLower()));
+                        return new ApiResult<bool>(ApiCode.Success, "OK", _context.Tenant.Any(c => c.Email.ToLower() == email.ToLower() && c.Deleted==false));
                     case 2:
-                        return new ApiResult<bool>(ApiCode.Success, "OK", _context.Customer.Any(c => c.Email.ToLower() == email.ToLower()));
+                        return new ApiResult<bool>(ApiCode.Success, "OK", _context.Customer.Any(c => c.Email.ToLower() == email.ToLower() && c.Deleted==false));
                     case 3:
-                        return new ApiResult<bool>(ApiCode.Success, "OK", _context.Users.Any(c => c.Email.ToLower() == email.ToLower()));
+                        return new ApiResult<bool>(ApiCode.Success, "OK", _context.Users.Any(c => c.Email.ToLower() == email.ToLower() ));
 
                 }
                 return new ApiResult<bool>(ApiCode.Success, "OK", false);

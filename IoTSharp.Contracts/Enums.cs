@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -32,15 +33,40 @@ namespace IoTSharp.Contracts
         RPCTimeout = 10012,
         CustomerDoesNotHaveDevice = 10013,
         CreateUserFailed = 10014,
-
         CantFindObject = 10015,
         InValidData = 10016,
         NotFoundProduce = 10017,
         NotFile = 10018,
         Empty = 10019,
+        UserAlreadyExists = 10020,
+        NotFoundUser = 10021,
+        CanNotLockUser = 10022,
+        LockUserHaveError = 10023,
+        CanNotUnLockUser = 10024,
+        UnLockUserHaveError = 10025,
+        NotEnableTls = 10026,
+        NeedServerIPAddress = 10027,
     }
-
- 
+    [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+    [JsonConverter(typeof(StringEnumConverter))]
+    public enum LockOpt
+    {
+        /// <summary>
+        /// 获取状态
+        /// </summary>
+        [EnumMember()]
+        Status,
+        /// <summary>
+        /// 锁定用户
+        /// </summary>
+        [EnumMember()]
+        Lock,
+        /// <summary>
+        /// 解锁用户
+        /// </summary>
+        [EnumMember()]
+        Unlock
+    }
 
     [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
     [JsonConverter(typeof(StringEnumConverter))]

@@ -17,7 +17,7 @@ namespace IoTSharp.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.9")
+                .HasAnnotation("ProductVersion", "6.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -87,6 +87,9 @@ namespace IoTSharp.Migrations
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -196,6 +199,9 @@ namespace IoTSharp.Migrations
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .HasColumnType("text");
@@ -486,6 +492,9 @@ namespace IoTSharp.Migrations
 
                     b.Property<string>("Country")
                         .HasColumnType("text");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Email")
                         .HasColumnType("text");
@@ -1247,11 +1256,26 @@ namespace IoTSharp.Migrations
                     b.Property<Guid?>("ExecutorId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("FlowClass")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FlowIcon")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FlowNameSpace")
+                        .HasColumnType("text");
+
                     b.Property<Guid?>("FlowRuleRuleId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("FlowShapeType")
+                        .HasColumnType("text");
+
                     b.Property<int>("FlowStatus")
                         .HasColumnType("integer");
+
+                    b.Property<string>("FlowTag")
+                        .HasColumnType("text");
 
                     b.Property<string>("FlowType")
                         .HasColumnType("text");
@@ -1263,6 +1287,9 @@ namespace IoTSharp.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Incoming")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Left")
                         .HasColumnType("text");
 
                     b.Property<string>("NodeProcessClass")
@@ -1306,6 +1333,9 @@ namespace IoTSharp.Migrations
 
                     b.Property<DateTime>("TesterDateTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Top")
+                        .HasColumnType("text");
 
                     b.Property<string>("bpmnid")
                         .HasColumnType("text");
@@ -1458,6 +1488,9 @@ namespace IoTSharp.Migrations
                     b.Property<int>("DefaultTimeout")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -1499,6 +1532,9 @@ namespace IoTSharp.Migrations
 
                     b.Property<string>("DefaultValue")
                         .HasColumnType("text");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Display")
                         .HasColumnType("boolean");
@@ -1840,7 +1876,10 @@ namespace IoTSharp.Migrations
                     b.Property<string>("Country")
                         .HasColumnType("text");
 
-                    b.Property<string>("EMail")
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Email")
                         .HasColumnType("text");
 
                     b.Property<string>("Name")

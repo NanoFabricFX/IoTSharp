@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
+using Esprima.Ast;
 using IoTSharp.Contracts;
 using IoTSharp.Controllers.Models;
 using IoTSharp.Data;
@@ -13,6 +15,7 @@ using IoTSharp.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 using Microsoft.Scripting.Utils;
 using ShardingCore.Extensions;
@@ -39,59 +42,25 @@ namespace IoTSharp.Controllers
         /// <param name="m"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ApiResult<PagedData<ProduceDto>>> List([FromQuery] ProduceParam m)
+        public async Task<ApiResult<PagedData<ProduceDto>>> List([FromQuery] QueryDto m)
         {
             var profile = this.GetUserProfile();
             Expression<Func<Produce, bool>> condition = x =>
-                x.Customer.Id == profile.Customer && x.Tenant.Id == profile.Tenant;
-
-
-            if (!string.IsNullOrEmpty(m.Name))
+                x.Customer.Id == profile.Customer && x.Tenant.Id == profile.Tenant && x.Deleted == false;
+            var querym = _context.Produces.Include(c => c.Devices.Where(c => c.Deleted == false));
+            var data = await m.Query(querym, condition, c => c.Name, c => new ProduceDto
             {
-                condition = condition.And(x => x.Name.Contains(m.Name));
-            }
-
-
-            if (m.limit > 1)
-            {
-                return new ApiResult<PagedData<ProduceDto>>(ApiCode.Success, "OK", new PagedData<ProduceDto>
-                {
-                    total = await _context.Produces.CountAsync(condition),
-                    rows = _context.Produces.Include(c => c.Devices.Where(c=>c.Deleted==false)).Where(condition).Skip((m.offset) * m.limit)
-                        .Take(m.limit)
-                        .ToList().Select(c => new ProduceDto
-                        {
-                            Id = c.Id,
-                            DefaultIdentityType = c.DefaultIdentityType,
-                            DefaultTimeout = c.DefaultTimeout,
-                            Description = c.Description,
-                            Name = c.Name, Devices = c.Devices
-                        }).ToList()
-
-                });
-
-            }
-            else
-            {
-                return new ApiResult<PagedData<ProduceDto>>(ApiCode.Success, "OK", new PagedData<ProduceDto>
-                {
-                    total = await _context.Produces.CountAsync(),
-                    rows = _context.Produces.Where(condition)
-                        .ToList().Select(c => new ProduceDto
-                        {
-                            Id = c.Id,
-                            DefaultIdentityType = c.DefaultIdentityType,
-                            DefaultTimeout = c.DefaultTimeout,
-                            Description = c.Description,
-                            Name = c.Name
-                        }).ToList()
-
-                });
-            }
-
-
-
+                Id = c.Id,
+                DefaultIdentityType = c.DefaultIdentityType,
+                DefaultTimeout = c.DefaultTimeout,
+                Description = c.Description,
+                Name = c.Name,
+                Devices = c.Devices
+            });
+            return new ApiResult<PagedData<ProduceDto>>(ApiCode.Success, "OK", data);
         }
+
+
 
         /// <summary>
         /// 
@@ -115,7 +84,7 @@ namespace IoTSharp.Controllers
         [HttpGet]
         public async Task<ApiResult<ProduceAddDto>> Get(Guid id)
         {
-            var result = await _context.Produces.SingleOrDefaultAsync(c => c.Id == id);
+            var result = await _context.Produces.SingleOrDefaultAsync(c => c.Id == id && c.Deleted == false);
             if (result != null)
             {
                 return new ApiResult<ProduceAddDto>(ApiCode.Success, "OK", new ProduceAddDto
@@ -151,12 +120,11 @@ namespace IoTSharp.Controllers
 
             try
             {
-                var produce = await _context.Produces.SingleOrDefaultAsync(c => c.Id == produceid);
+                var produce = await _context.Produces.FindAsync(produceid);
                 if (produce != null)
                 {
-                    _context.ProduceDatas.RemoveRange(_context.ProduceDatas.Where(c => c.Owner == produce));
-                    await _context.SaveChangesAsync();
-                    _context.Produces.Remove(produce);
+                    produce.Deleted = false;
+                    _context.Produces.Update(produce);
                     await _context.SaveChangesAsync();
                     return new ApiResult<bool>(ApiCode.Success, "OK", true);
                 }
@@ -193,6 +161,7 @@ namespace IoTSharp.Controllers
                     dto.Name;
                 produce.GatewayConfiguration = dto.GatewayConfiguration;
                 produce.Icon = dto.Icon;
+                produce.Deleted = false;
                 produce.GatewayType = dto.GatewayType;
                 _context.Produces.Add(produce);
                 await _context.SaveChangesAsync();
@@ -216,7 +185,7 @@ namespace IoTSharp.Controllers
 
             try
             {
-                var produce = await _context.Produces.SingleOrDefaultAsync(c => c.Id == dto.Id);
+                var produce = await _context.Produces.SingleOrDefaultAsync(c => c.Id == dto.Id && c.Deleted == false);
                 if (produce != null)
                 {
                     produce.DefaultIdentityType = dto.DefaultIdentityType;
@@ -228,6 +197,9 @@ namespace IoTSharp.Controllers
                     produce.Icon = dto.Icon;
                     _context.Produces.Update(produce);
                     await _context.SaveChangesAsync();
+
+
+                    return new ApiResult<bool>(ApiCode.Success, "Ok", true);
                 }
 
                 return new ApiResult<bool>(ApiCode.CantFindObject, "Produce is  not found", false);
@@ -239,9 +211,6 @@ namespace IoTSharp.Controllers
 
         }
 
-
-
-
         /// <summary>
         /// 获取产品属性
         /// </summary>
@@ -250,15 +219,11 @@ namespace IoTSharp.Controllers
         [HttpGet]
         public async Task<ApiResult<List<ProduceDataItemDto>>> GetProduceData(Guid produceId)
         {
-            var produce = await _context.Produces.Include(c=>c.DefaultAttributes)
-                .SingleOrDefaultAsync(c => c.Id == produceId);
+            var produce = await _context.Produces.Include(c => c.DefaultAttributes)
+                .SingleOrDefaultAsync(c => c.Id == produceId && c.Deleted == false);
             if (produce != null)
             {
-
-
-                //var result = _context.ProduceDatas.Include(c=>c.Owner).Where(c => c.Owner.Id == produceId).Select(c => new ProduceDataItemDto
-                //{ KeyName = c.KeyName, DataSide = c.DataSide, Type = c.Type }).ToList();
-                var result = _context.DataStorage.Where(c => c.DeviceId == produceId).Select(c =>
+                var result = produce.DefaultAttributes.Select(c =>
                     new ProduceDataItemDto
                     { KeyName = c.KeyName, DataSide = c.DataSide, Type = c.Type }).ToList();
                 return new ApiResult<List<ProduceDataItemDto>>(ApiCode.Success, "Ok", result);
@@ -282,17 +247,25 @@ namespace IoTSharp.Controllers
             try
             {
                 var produce = await _context.Produces.Include(c => c.DefaultAttributes)
-                    .SingleOrDefaultAsync(c => c.Id == dto.produceId);
+                    .SingleOrDefaultAsync(c => c.Id == dto.produceId && c.Deleted == false);
                 if (produce != null)
                 {
-                    var pds = _context.ProduceDatas.Include(c=>c.Owner).Where(c => c.Owner.Id==dto.produceId).ToList();
+
+                    var d = _context.ProduceDatas.ToList();
+                    var pds = _context.ProduceDatas.Include(c => c.Owner).Where(c => c.Owner.Id == dto.produceId).ToList();
                     if (dto.ProduceData != null && dto.ProduceData.Length > 0)
                     {
                         var data = dto.ProduceData.Select(c => new ProduceData
                         {
-                            KeyName = c.KeyName, DataSide = c.DataSide, Type = c.Type, Owner = produce,
+                            KeyName = c.KeyName,
+                            DataSide = c.DataSide,
+                            Type = c.Type,
+                            Owner = produce,
                             DateTime = DateTime.Now
                         }).ToList();
+
+                        var delete_keynames = pds.Select(c => c.KeyName.ToLower())
+                            .Except(dto.ProduceData.Select(c => c.KeyName.ToLower())).ToArray();
                         foreach (var item in data)
                         {
                             var pd = pds.FirstOrDefault(c => c.KeyName.ToLower() == item.KeyName.ToLower());
@@ -304,14 +277,10 @@ namespace IoTSharp.Controllers
                             }
                             else
                             {
-                                item.DeviceId = dto.produceId;
-                                _context.ProduceDatas.Add(item);
+                                produce.DefaultAttributes.Add(item);
                             }
                         }
-
                         await _context.SaveChangesAsync();
-                        var delete_keynames = pds.Select(c => c.KeyName.ToLower())
-                            .Except(dto.ProduceData.Select(c => c.KeyName.ToLower())).ToArray();
                         if (delete_keynames.Length > 0)
                         {
                             var deleteattr = pds.Join(delete_keynames, x => x.KeyName.ToLower(), y => y, (x, y) => x)
@@ -320,7 +289,6 @@ namespace IoTSharp.Controllers
                             await _context.SaveChangesAsync();
 
                         }
-
                         return new ApiResult<bool>(ApiCode.Success, "Ok", true);
                     }
 
@@ -348,10 +316,13 @@ namespace IoTSharp.Controllers
         public async Task<ApiResult<List<ProduceDictionary>>> GetProduceDictionary(Guid produceId)
         {
             var produce = await _context.Produces.Include(c => c.Dictionaries)
-                .SingleOrDefaultAsync(c => c.Id == produceId);
+                .SingleOrDefaultAsync(c => c.Id == produceId && c.Deleted == false);
             if (produce != null)
             {
-                return new ApiResult<List<ProduceDictionary>>(ApiCode.Success, "Ok", produce.Dictionaries);
+
+
+                var dic = produce.Dictionaries.Where(d => d.Deleted == false).ToList();
+                return new ApiResult<List<ProduceDictionary>>(ApiCode.Success, "Ok", dic);
             }
 
             return new ApiResult<List<ProduceDictionary>>(ApiCode.CantFindObject, "Produce is  not found", null);
@@ -366,16 +337,15 @@ namespace IoTSharp.Controllers
         [HttpPost]
         public async Task<ApiResult<bool>> EditProduceDictionary(ProduceDictionaryEditDto dto)
         {
-
-
             var profile = this.GetUserProfile();
             try
             {
                 var produce = await _context.Produces.Include(c => c.Dictionaries)
-                    .SingleOrDefaultAsync(c => c.Id == dto.produceId);
+                    .SingleOrDefaultAsync(c => c.Id == dto.produceId && c.Deleted == false);
                 if (produce != null)
                 {
-
+                    var deletedic = produce.Dictionaries.Select(c => c.Id)
+                        .Except(dto.ProduceDictionaryData.Where(c => c.Id != Guid.Empty).Select(c => c.Id)).ToList();
 
                     foreach (var item in dto.ProduceDictionaryData)
                     {
@@ -392,6 +362,8 @@ namespace IoTSharp.Controllers
                             produceDictionary.DisplayName = item.DisplayName;
                             produceDictionary.KeyDesc = item.KeyDesc;
                             produceDictionary.Tag = item.Tag;
+                            produceDictionary.Deleted = false;
+
                             produceDictionary.UnitConvert = item.UnitConvert;
                             produceDictionary.Unit = item.Unit;
                             produceDictionary.UnitExpression = item.UnitExpression;
@@ -412,6 +384,7 @@ namespace IoTSharp.Controllers
                                 produceDictionary.DisplayName = item.DisplayName;
                                 produceDictionary.KeyDesc = item.KeyDesc;
                                 produceDictionary.Tag = item.Tag;
+                                produceDictionary.Deleted = false;
                                 produceDictionary.UnitConvert = item.UnitConvert;
                                 produceDictionary.Unit = item.Unit;
                                 produceDictionary.UnitExpression = item.UnitExpression;
@@ -421,11 +394,9 @@ namespace IoTSharp.Controllers
 
                         }
                     }
-
-                    var deletedic = produce.Dictionaries.Select(c => c.Id)
-                        .Except(dto.ProduceDictionaryData.Select(c => c.Id)).ToList();
-                    _context.ProduceDictionaries.RemoveRange(produce.Dictionaries
-                        .Where(c => deletedic.Any(p => p == c.Id)).ToList());
+                    var sc = produce.Dictionaries.Where(c => deletedic.Any(p => p == c.Id));
+                    sc.ForEach(c => c.Deleted = true);
+                    _context.ProduceDictionaries.UpdateRange(sc);
                     await _context.SaveChangesAsync();
 
                     return new ApiResult<bool>(ApiCode.Success, "Ok", true);

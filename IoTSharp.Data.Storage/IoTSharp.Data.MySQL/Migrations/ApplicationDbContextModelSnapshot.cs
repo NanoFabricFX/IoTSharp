@@ -16,7 +16,7 @@ namespace IoTSharp.Data.MySql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.9")
+                .HasAnnotation("ProductVersion", "6.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("IoTSharp.Data.Alarm", b =>
@@ -84,6 +84,9 @@ namespace IoTSharp.Data.MySql.Migrations
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("char(36)");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
@@ -193,6 +196,9 @@ namespace IoTSharp.Data.MySql.Migrations
 
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("char(36)");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
@@ -477,6 +483,9 @@ namespace IoTSharp.Data.MySql.Migrations
 
                     b.Property<string>("Country")
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Email")
                         .HasColumnType("longtext");
@@ -1232,11 +1241,26 @@ namespace IoTSharp.Data.MySql.Migrations
                     b.Property<Guid?>("ExecutorId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("FlowClass")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FlowIcon")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FlowNameSpace")
+                        .HasColumnType("longtext");
+
                     b.Property<Guid?>("FlowRuleRuleId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("FlowShapeType")
+                        .HasColumnType("longtext");
+
                     b.Property<int>("FlowStatus")
                         .HasColumnType("int");
+
+                    b.Property<string>("FlowTag")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("FlowType")
                         .HasColumnType("longtext");
@@ -1248,6 +1272,9 @@ namespace IoTSharp.Data.MySql.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Incoming")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Left")
                         .HasColumnType("longtext");
 
                     b.Property<string>("NodeProcessClass")
@@ -1291,6 +1318,9 @@ namespace IoTSharp.Data.MySql.Migrations
 
                     b.Property<DateTime>("TesterDateTime")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Top")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("bpmnid")
                         .HasColumnType("longtext");
@@ -1443,6 +1473,9 @@ namespace IoTSharp.Data.MySql.Migrations
                     b.Property<int>("DefaultTimeout")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
@@ -1484,6 +1517,9 @@ namespace IoTSharp.Data.MySql.Migrations
 
                     b.Property<string>("DefaultValue")
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("Display")
                         .HasColumnType("tinyint(1)");
@@ -1825,7 +1861,10 @@ namespace IoTSharp.Data.MySql.Migrations
                     b.Property<string>("Country")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("EMail")
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Email")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Name")
