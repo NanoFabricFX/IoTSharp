@@ -12,8 +12,6 @@
 ![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/maikebing/iotsharp?style=flat-square)
 ![Docker Pulls](https://img.shields.io/docker/pulls/maikebing/iotsharp)
 ![GitHub all releases](https://img.shields.io/github/downloads/iotsharp/iotsharp/total)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/IoTSharp/IoTSharp.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/IoTSharp/IoTSharp/alerts/)
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/IoTSharp/IoTSharp.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/IoTSharp/IoTSharp/context:javascript)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FIoTSharp%2FIoTSharp.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FIoTSharp%2FIoTSharp?ref=badge_shield)
 [![star](https://gitee.com/IoTSharp/IoTSharp/badge/star.svg?theme=gvp)](https://gitee.com/IoTSharp/IoTSharp/stargazers)
 [![fork](https://gitee.com/IoTSharp/IoTSharp/badge/fork.svg?theme=gvp)](https://gitee.com/IoTSharp/IoTSharp/members)
@@ -66,9 +64,9 @@ IoTSharp is an open-source IoT platform for data collection, processing, visuali
 * MySql,
 * SqlServer
 
-## IoTShar Demo 
-      
- - [IoTSharp front-end implemented using Angular](http://139.9.232.10:2927)
+
+## IoTSharp Demo       
+
  - [IoTSharp front-end implemented using Vue3](http://demo.iotsharp.net)
 
 
@@ -130,7 +128,7 @@ https://github.com/IoTSharp/iotsharp-rtthread-package
 - IoTSharp.EntityFrameworkCore.Taos   [![IoTSharp.EntityFrameworkCore.Taos](https://img.shields.io/nuget/v/IoTSharp.EntityFrameworkCore.Taos.svg)](https://www.nuget.org/packages/IoTSharp.EntityFrameworkCore.Taos/)
 - IoTSharp.Sdk.Http   [![IoTSharp.Sdk.Http](https://img.shields.io/nuget/v/IoTSharp.Sdk.Http.svg)](https://www.nuget.org/packages/IoTSharp.Sdk.Http/)
 - IoTSharp.Sdk.MQTT   [![IoTSharp.Sdk.MQTT](https://img.shields.io/nuget/v/IoTSharp.Sdk.MQTT.svg)](https://www.nuget.org/packages/IoTSharp.Sdk.MQTT/)
- 
+
 ## Contributing
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/IoTSharp/IoTSharp/pulls)
@@ -168,13 +166,14 @@ We will put the detailed donation records on the below!
 |  | 匿名公司 |  | ￥1000=1000(微信转账) |  |
 |  | *阵 |  | ￥50(微信转账) |  |
 |  | *守 |  | ￥10(微信转账) | 加油iotsharp! |
+| [![@24008550](https://avatars.githubusercontent.com/u/2004038?s=80&v=4)](https://github.com/24008550) | 马超 | ![GitHub User's stars](https://img.shields.io/github/stars/24008550?affiliations=OWNER%2CCOLLABORATOR%2CORGANIZATION_MEMBER&style=for-the-badge) | ￥200（微信红包） |  |
+
+
 
 
 ## Community Support
 
 If you encounter any problems in the process, feel free to ask for help via following channels. We also encourage experienced users to help newcomers.
-
-- [![Discord Server](https://img.shields.io/discord/895689311612178442?color=%237289DA&label=IoTSharp&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/My6PaTmUvu)
 
 | 公众号 |    [QQ群63631741](https://jq.qq.com/?_wv=1027&k=HJ7h3gbO)  |  微信群  |
 | ------ | ---- | ---- |
@@ -184,3 +183,9 @@ If you encounter any problems in the process, feel free to ask for help via foll
 
 [![DotNetChina](https://images.gitee.com/uploads/images/2021/0309/134044_9c191d7b_974299.png)](https://gitee.com/dotnetchina/IoTSharp)
 
+## 优秀开源社区
+* [LinkWeChat](https://gitee.com/LinkWeChat/link-wechat) LinkWeChat 是基于企业微信的开源 SCRM 系统，是企业私域流量管理与营销的综合解决方案。
+* [IoTSharp](https://gitee.com/IoTSharp) IoTSharp 是一个 基于.Net Core 开源的物联网基础平台， 支持 HTTP、MQTT 、CoAp 协议
+* [流之云](https://gitee.com/ntdgg) 信息化、数字化服务提供商
+* [translate.js](https://gitee.com/mail_osc/translate) 网页自动翻译，页面无需另行改造，加入两行js即可让你的网页快速具备多国语言切换能力！
+* [IoTGateway](https://gitee.com/iioter/iotgateway) IoTGateway是一个基于.Net6.0 开源的物联网网关，通过可视化配置，轻松的连接到你的任何设备和物联网平台。

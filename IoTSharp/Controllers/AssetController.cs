@@ -56,15 +56,20 @@ namespace IoTSharp.Controllers
 
         }
         [HttpGet]
-        public async Task<ApiResult<List<AssetRelation>>> AssetRelations(Guid assetid)
+        public async Task<ApiResult<PagedData<AssetRelation>>> AssetRelations(Guid assetid)
         {
-            var result = await _context.Assets.Include(c => c.OwnedAssets).AsSingleQuery().SingleOrDefaultAsync(c => c.Id == assetid);
-            return new ApiResult<List<AssetRelation>>(ApiCode.Success, "OK", result?.OwnedAssets);
-
-
+            var data =new  PagedData<AssetRelation>();
+            var result = await _context.Assets.Include(c => c.OwnedAssets).AsSplitQuery().SingleOrDefaultAsync(c => c.Id == assetid);
+            data.rows = result.OwnedAssets;
+            data.total = result.OwnedAssets.Count;
+            return new ApiResult<PagedData<AssetRelation>>(ApiCode.Success, "OK",  data);
         }
 
-
+        /// <summary>
+        /// 获取资产的属性和遥测数据
+        /// </summary>
+        /// <param name="assetid"></param>
+        /// <returns></returns>
 
 
         [HttpGet]
@@ -107,7 +112,11 @@ namespace IoTSharp.Controllers
         }
 
 
-
+        /// <summary>
+        /// 根据资产Id获取资产信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ApiResult<AssetDto>> Get(Guid id)
         {
@@ -129,7 +138,11 @@ namespace IoTSharp.Controllers
             return new ApiResult<AssetDto>(ApiCode.CantFindObject, "Not found asset", null);
 
         }
-
+        /// <summary>
+        /// 修改资产信息
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPut]
         public async Task<ApiResult<bool>> Update([FromBody] AssetDto dto)
         {
@@ -160,10 +173,14 @@ namespace IoTSharp.Controllers
             }
 
         }
-
+        /// <summary>
+        /// 保存资产信息
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
 
         [HttpPost]
-        public async Task<ApiResult<bool>> Save([FromBody] AssetDto dto)
+        public async Task<ApiResult<bool>> Save([FromBody] AssetAddDto dto)
         {
             try
             {
@@ -215,10 +232,14 @@ namespace IoTSharp.Controllers
             }
 
         }
-
+        /// <summary>
+        /// 增加资产
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
 
         [HttpPost]
-        public async Task<ApiResult<bool>> addDevice(ModelAssetDevice m)
+        public async Task<ApiResult<bool>> addDevice(ModelAddAssetDevice m)
         {
 
             var profile = this.GetUserProfile();
@@ -300,7 +321,11 @@ namespace IoTSharp.Controllers
             }
 
         }
-
+        /// <summary>
+        /// 根据Id移除资产的属性或者遥测
+        /// </summary>
+        /// <param name="relationId"></param>
+        /// <returns></returns>
         [HttpDelete]
 
         public async Task<ApiResult<bool>> RemoveAssetRaletions(Guid relationId)
@@ -325,11 +350,15 @@ namespace IoTSharp.Controllers
             }
         }
 
-
+        /// <summary>
+        ///  修改资产和设备关联属性或者遥测信息
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
 
         [HttpPost]
 
-        public async Task<ApiResult<bool>> EditRelation(ModelAssetAttrItem m)
+        public async Task<ApiResult<bool>> EditRelation(ModelEditAssetAttrItem m)
         {
             var profile = this.GetUserProfile();
             try
