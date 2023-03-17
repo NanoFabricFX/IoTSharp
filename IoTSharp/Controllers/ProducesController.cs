@@ -71,7 +71,7 @@ namespace IoTSharp.Controllers
         public async Task<ApiResult<List<ProduceData>>> ProduceDatas(Guid produceid)
         {
             var result = await _context.ProduceDatas.Include(c => c.Owner).Where(p => p.Owner.Id == produceid)
-                .AsSplitQuery().ToListAsync();
+                .ToListAsync();
             return new ApiResult<List<ProduceData>>(ApiCode.Success, "OK", result);
         }
 
@@ -261,7 +261,7 @@ namespace IoTSharp.Controllers
                             DataSide = c.DataSide,
                             Type = c.Type,
                             Owner = produce,
-                            DateTime = DateTime.Now
+                            DateTime = DateTime.UtcNow
                         }).ToList();
 
                         var delete_keynames = pds.Select(c => c.KeyName.ToLower())

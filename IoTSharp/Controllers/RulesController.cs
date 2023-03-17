@@ -105,7 +105,7 @@ namespace IoTSharp.Controllers
                 m.MountType = m.MountType;
                 m.RuleStatus = 1;
                 _context.JustFill(this, m);
-                m.CreatTime = DateTime.Now;
+                m.CreatTime = DateTime.UtcNow;
                 _context.FlowRules.Add(m);
                 await _context.SaveChangesAsync();
                 return new ApiResult<bool>(ApiCode.Success, "OK", true);
@@ -205,7 +205,7 @@ namespace IoTSharp.Controllers
                 newrule.Describes = flowRule.Describes;
                 //     newrule.Creator = profile.Id.ToString();
                 newrule.Name = flowRule.Name;
-                newrule.CreatTime = DateTime.Now;
+                newrule.CreatTime = DateTime.UtcNow;
                 newrule.ExecutableCode = rule.ExecutableCode;
                 newrule.RuleDesc = flowRule.RuleDesc;
                 newrule.RuleStatus = 1;
@@ -225,7 +225,7 @@ namespace IoTSharp.Controllers
                 {
                     FlowRule = newrule,
                     Conditionexpression = c.Conditionexpression,
-                    CreateDate = DateTime.Now,
+                    CreateDate = DateTime.UtcNow,
                     FlowStatus = 1,
                     FlowType = c.FlowType,
                     Flowdesc = c.Flowdesc,
@@ -282,7 +282,7 @@ namespace IoTSharp.Controllers
                                 var dr = new DeviceRule();
                                 dr.Device = dev;
                                 dr.FlowRule = rule;
-                                dr.ConfigDateTime = DateTime.Now;
+                                dr.ConfigDateTime = DateTime.UtcNow;
                                 dr.ConfigUser = profile.Id;
                                 _context.DeviceRules.Add(dr);
                             }
@@ -309,7 +309,7 @@ namespace IoTSharp.Controllers
         {
             var profile = this.GetUserProfile();
             var map = await _context.DeviceRules.Include(c => c.Device)
-                .Include(c => c.FlowRule).AsSplitQuery().FirstOrDefaultAsync(c => c.FlowRule.RuleId == ruleId && c.Device.Id == deviceId && c.Device.Tenant.Id == profile.Tenant && c.FlowRule.Tenant.Id == profile.Tenant);
+                .Include(c => c.FlowRule).FirstOrDefaultAsync(c => c.FlowRule.RuleId == ruleId && c.Device.Id == deviceId && c.Device.Tenant.Id == profile.Tenant && c.FlowRule.Tenant.Id == profile.Tenant);
             if (map != null)
             {
                 _context.DeviceRules.Remove(map);
@@ -323,7 +323,7 @@ namespace IoTSharp.Controllers
         public ApiResult<List<FlowRule>> GetDeviceRules(Guid deviceId)
         {
             var profile = this.GetUserProfile();
-            return new ApiResult<List<FlowRule>>(ApiCode.Success, "Ok", _context.DeviceRules.Include(c => c.Device).Where(c => c.Device.Id == deviceId && c.Device.Tenant.Id == profile.Tenant).Select(c => c.FlowRule).Select(c => new FlowRule() { RuleId = c.RuleId, CreatTime = c.CreatTime, Name = c.Name, RuleDesc = c.RuleDesc }).AsSplitQuery().ToList());
+            return new ApiResult<List<FlowRule>>(ApiCode.Success, "Ok", _context.DeviceRules.Include(c => c.Device).Where(c => c.Device.Id == deviceId && c.Device.Tenant.Id == profile.Tenant).Select(c => c.FlowRule).Select(c => new FlowRule() { RuleId = c.RuleId, CreatTime = c.CreatTime, Name = c.Name, RuleDesc = c.RuleDesc }).ToList());
         }
 
         [HttpGet]
@@ -356,7 +356,7 @@ namespace IoTSharp.Controllers
                     Name = c.Device.Name,
                     Timeout = c.Device.Timeout
                 }).Skip(m.Offset * m.Limit).Take(m.Limit).ToListAsync();
-            var total = await _context.DeviceRules.Include(c => c.FlowRule).Include(c => c.Device).Where(condition).Select(c => c.Device).AsSplitQuery().CountAsync();
+            var total = await _context.DeviceRules.Include(c => c.FlowRule).Include(c => c.Device).Where(condition).Select(c => c.Device).CountAsync();
             return new ApiResult<PagedData<DeviceRuleDto>>(ApiCode.Success, "Ok", new PagedData<DeviceRuleDto> { rows = rows, total = total });
         }
 
@@ -375,8 +375,8 @@ namespace IoTSharp.Controllers
             var profile = this.GetUserProfile();
             var activity = JsonConvert.DeserializeObject<Activity>(m.Biz);
             var CreatorId = Guid.NewGuid();
-            var CreateDate = DateTime.Now;
-            var rule = _context.FlowRules.Include(c => c.Customer).Include(c => c.Tenant).AsSplitQuery().FirstOrDefault(c => c.RuleId == activity.RuleId);
+            var CreateDate = DateTime.UtcNow;
+            var rule = _context.FlowRules.Include(c => c.Customer).Include(c => c.Tenant).FirstOrDefault(c => c.RuleId == activity.RuleId);
             rule.DefinitionsXml = m.Xml;
             rule.Creator = profile.Id.ToString();
             rule.CreateId = CreatorId;
@@ -666,8 +666,8 @@ namespace IoTSharp.Controllers
             try
             {
                 var CreatorId = Guid.NewGuid();
-                var CreateDate = DateTime.Now;
-                var rule = _context.FlowRules.Include(c => c.Customer).Include(c => c.Tenant).AsSplitQuery().FirstOrDefault(c => c.RuleId == m.RuleId);
+                var CreateDate = DateTime.UtcNow;
+                var rule = _context.FlowRules.Include(c => c.Customer).Include(c => c.Tenant).FirstOrDefault(c => c.RuleId == m.RuleId);
                 rule.Creator = profile.Id.ToString();
                 rule.CreateId = CreatorId;
                 _context.Flows.Where(c => c.FlowRule.RuleId == rule.RuleId).ToList().ForEach(c =>
@@ -1491,8 +1491,8 @@ namespace IoTSharp.Controllers
         public ApiResult<dynamic> GetFlowOperations(Guid eventId)
         {
             var profile = this.GetUserProfile();
-            var _event = _context.BaseEvents.Include(c => c.FlowRule).AsSplitQuery().SingleOrDefault(c => c.EventId == eventId);
-            var _operations = _context.FlowOperations.Include(c => c.Flow).Where(c => c.BaseEvent == _event).AsSplitQuery().ToList();
+            var _event = _context.BaseEvents.Include(c => c.FlowRule).SingleOrDefault(c => c.EventId == eventId);
+            var _operations = _context.FlowOperations.Include(c => c.Flow).Where(c => c.BaseEvent == _event).ToList();
 
 
 
@@ -1616,7 +1616,7 @@ namespace IoTSharp.Controllers
             executor.TypeName = m.ExecutorName;
             executor.Path = m.Path;
             executor.Tag = m.Tag;
-            executor.AddDateTime = DateTime.Now;
+            executor.AddDateTime = DateTime.UtcNow;
             executor.Creator = User.GetUserId();
             executor.ExecutorStatus = 1;
             _context.JustFill(this, executor);
@@ -1629,7 +1629,7 @@ namespace IoTSharp.Controllers
         public async Task<ApiResult<RuleTaskExecutorTestResultDto>> TestTask(RuleTaskExecutorTestDto m)
         {
             var profile = this.GetUserProfile();
-            var result = await this._flowRuleProcessor.TestScript(m.ruleId, m.flowId, m.Data);
+            var result = await  _flowRuleProcessor.TestScript(m.ruleId, m.flowId, m.Data);
             await _context.SaveChangesAsync();
             return new ApiResult<RuleTaskExecutorTestResultDto>(ApiCode.Success, "Ok", new RuleTaskExecutorTestResultDto() { Data = result.Data });
         }
@@ -1640,7 +1640,7 @@ namespace IoTSharp.Controllers
             var profile = this.GetUserProfile();
             var data = JsonConvert.DeserializeObject(m.Data) as JObject;
             var d = data.ToObject(typeof(ExpandoObject));
-            var result = await this._flowRuleProcessor.TestCondition(m.ruleId, m.flowId, d);
+            var result = await  _flowRuleProcessor.TestCondition(m.ruleId, m.flowId, d);
             return new ApiResult<ConditionTestResult>(ApiCode.Success, "Ok", result);
         }
     }

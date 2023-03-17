@@ -39,13 +39,6 @@
             <param name="model"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.AccountController.CreateToken(System.String)">
-             <summary>
-            
-             </summary>
-             <param name="name"></param>
-             <returns></returns>
-        </member>
         <member name="M:IoTSharp.Controllers.AccountController.RefreshToken(IoTSharp.Dtos.RefreshTokenDto)">
             <summary>
             刷新JWT Token
@@ -80,6 +73,13 @@
             <param name="model"></param>
             <returns >返回登录结果</returns>
         </member>
+        <member name="M:IoTSharp.Controllers.AccountController.PostAccount(IoTSharp.Dtos.CreateUserInput)">
+            <summary>
+            为当前客户所在的租户新增用户  zhangjie 20230308
+            </summary>
+            <param name="model">前端传参</param>
+            <returns></returns>
+        </member>
         <member name="M:IoTSharp.Controllers.AccountController.List(IoTSharp.Controllers.Models.UserQueryDto)">
             <summary>
             列出指定租户的所有用户。
@@ -104,6 +104,8 @@
              NotFoundUser = 10021,
              CanNotLockUser = 10022,
             LockUserHaveError = 10023
+            CanNotLockYourself =10028 
+            CanNotUnlockYourself =10029 
             </returns>
         </member>
         <member name="M:IoTSharp.Controllers.AccountController.Modify(IoTSharp.Dtos.UserItemDto)">
@@ -466,7 +468,7 @@
         </member>
         <member name="M:IoTSharp.Controllers.DevicesController.Attributes(System.String,IoTSharp.Contracts.DataSide,System.String)">
              <summary>
-             获取服务测的设备熟悉
+             获取服务侧的设备属性
              </summary>
              <param name="access_token">Device 's access token </param>
             <param name="dataSide">Specifying data side.</param>
@@ -522,14 +524,11 @@
             <param name="attributes"></param>
             <returns></returns>
         </member>
-        <member name="M:IoTSharp.Controllers.DevicesController.RemoveAttribute(System.Guid,System.String,IoTSharp.Contracts.DataSide)">
+        <member name="M:IoTSharp.Controllers.DevicesController.RemoveAttribute(IoTSharp.Dtos.RemoveDeviceAttributeInput)">
             <summary>
             属性删除
             </summary>
-            <param name="deviceId"></param>
-            <param name="keyName"></param>
-            <param name="dataSide"></param>
-            <returns></returns>
+            <param name="input">要删除的属性。</param>
         </member>
         <member name="M:IoTSharp.Controllers.DevicesController.GetSessionStatus">
             <summary>
@@ -711,6 +710,13 @@
             租户管理
             </summary>
         </member>
+        <member name="M:IoTSharp.Controllers.TenantsController.GetTenant(IoTSharp.Controllers.Models.QueryDto)">
+            <summary>
+            产品列表
+            </summary>
+            <param name="m"></param>
+            <returns></returns>
+        </member>
         <member name="M:IoTSharp.Controllers.TenantsController.GetTenant(System.Guid)">
             <summary>
             普通用户用于活的自身的租户信息
@@ -739,6 +745,16 @@
             </summary>
             <param name="id"></param>
             <returns></returns>
+        </member>
+        <member name="P:IoTSharp.Controllers.DeviceAttributeDto.DataSide">
+            <summary>
+            数据侧
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Controllers.DeviceAttributeDto.DataType">
+            <summary>
+            数据类型
+            </summary>
         </member>
         <member name="P:IoTSharp.Controllers.Models.QueryDto.Offset">
             <summary>
@@ -918,6 +934,26 @@
         <member name="P:IoTSharp.Dtos.CreateUserDto.Customer">
             <summary>
             客户的ID
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.CreateUserInput.Email">
+            <summary>
+            邮箱地址， 也是用户名，一个邮箱只能注册平台的一个客户，如果你在平台有两个租户都有账号，则需要两个邮箱地址。 
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.CreateUserInput.PhoneNumber">
+            <summary>
+            电话号码
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.CreateUserInput.CustomerId">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:IoTSharp.Dtos.CreateUserInput.Password">
+            <summary>
+            用户名密码
             </summary>
         </member>
         <member name="P:IoTSharp.Dtos.DeviceDetailDto.Name">
@@ -1103,7 +1139,7 @@
         </member>
         <member name="P:IoTSharp.Dtos.ProduceDictionaryItemDto.UnitConvert">
             <summary>
-            
+            单位转换
             </summary>
         </member>
         <member name="P:IoTSharp.Dtos.ProduceDictionaryItemDto.KeyDesc">
@@ -1346,7 +1382,7 @@
         </member>
         <member name="M:IoTSharp.FlowRuleEngine.FlowRuleProcessor.RunFlowRules(System.Guid,System.Object,System.Guid,IoTSharp.Contracts.FlowRuleRunType,System.String)">
              <summary>
-            
+            运行指定规则链的规则
              </summary>
              <param name="ruleid"> 规则Id</param>
              <param name="data">数据</param>
